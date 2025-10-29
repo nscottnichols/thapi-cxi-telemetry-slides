@@ -1,0 +1,512 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Extending THAPI with CXI Hardware Counter Sampling</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+
+  <!-- Reveal.js core & theme -->
+  <link rel="stylesheet" href="https://unpkg.com/reveal.js@4/dist/reveal.css">
+  <link rel="stylesheet" href="https://unpkg.com/reveal.js@4/dist/theme/white.css" id="theme">
+
+  <!-- Syntax highlight theme (used by reveal/plugin/highlight) -->
+  <link rel="stylesheet" href="https://unpkg.com/reveal.js@4/plugin/highlight/monokai.css">
+
+  <style>
+    :root {
+      --slide-max-width: 1200px;
+    }
+    .reveal .slides { text-align: left; }
+    .reveal section { max-width: var(--slide-max-width); }
+    .reveal h1, .reveal h2 { letter-spacing: 0.2px; }
+    .reveal h1 { font-size: 2.0em; margin-bottom: 0.3em; }
+    .reveal h2 { font-size: 1.6em; margin-bottom: 0.2em; }
+    .reveal ul { font-size: 1.0em; line-height: 1.35; }
+    .reveal li { margin: 0.25em 0; }
+    .reveal small.caption { display:block; font-size: 0.65em; color:#555; margin-top: 0.5em; }
+    .placeholder {
+      border: 1.5px dashed #888; padding: 0.8em 1em; margin-top: 0.6em;
+      font-size: 0.9em; background: #fafafa; border-radius: 6px;
+    }
+    code, .reveal pre { font-size: 0.85em; }
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 1.2rem; }
+    .sm { font-size: 0.9em; }
+    .tight li { margin: 0.18em 0; }
+    /* Footer/progress alignment like prior deck */
+    .reveal .progress { height: 4px; }
+  </style>
+</head>
+<body>
+  <div class="reveal">
+    <div class="slides">
+
+      <!-- ──────────────────────────────── -->
+      <!-- Title                            -->
+      <!-- ──────────────────────────────── -->
+      <section>
+        <h1>Extending THAPI with CXI Hardware Counter Sampling</h1>
+        <ul class="sm">
+          <li>FIXME add authors</li>
+          <li>FIXME add Argonne logo</li>
+        </ul>
+        <aside class="notes">
+          Set the premise: we extend THAPI to sample Cassini (CXI) NIC counters and time‑align them with app traces, viewable in Perfetto.
+          Mention negligible incremental overhead at default 10 Hz.
+        </aside>
+      </section>
+
+      <!-- ──────────────────────────────── -->
+      <!-- Acknowledgements                 -->
+      <!-- ──────────────────────────────── -->
+      <section>
+        <h1>Acknowledgements</h1>
+        <pre><code class="language-bash">This research used resources of the Argonne Leadership Computing Facility, a U.S. Department of Energy (DOE) Office of Science user facility at Argonne National Laboratory and is based on research supported by the U.S. DOE Office of Science-Advanced Scientific Computing Research Program, under Contract No. DE-AC02-06CH11357.
+</code></pre>
+        <aside class="notes">
+          Acknowledgement statement
+        </aside>
+      </section>
+
+      <!-- ──────────────────────────────── -->
+      <!-- Motivation & Background          -->
+      <!-- ──────────────────────────────── -->
+
+      <section>
+        <h2>Why NIC Telemetry in Traces?</h2>
+        <ul>
+          <li>End‑of‑job summaries lack <strong>time alignment</strong> with phases</li>
+          <li><strong>Per‑NIC</strong> view exposes rail imbalance &amp; transient congestion</li>
+          <li>NIC counters complement API traces (MPI/OpenMP/GPU)</li>
+        </ul>
+        <aside class="notes">
+          Motivate the gap: without time‑aligned NIC signals, transient issues get missed. Per‑NIC attribution matters when multi‑rail is used.
+        </aside>
+      </section>
+
+      <section>
+        <h2>THAPI in a Nutshell</h2>
+        <ul>
+          <li>THAPI (Tracing Heterogeneous APIs) instruments APIs; logs via <strong>LTTng‑UST</strong></li>
+          <li><code>iprof --timeline</code> exports to <strong>Perfetto</strong> for interactive analysis</li>
+          <li>Sampling backends existed; <strong>NIC counters were missing</strong></li>
+        </ul>
+        <aside class="notes">
+          Place CXI sampling in the existing tracing/export pipeline; Perfetto is the user-facing UI.
+        </aside>
+      </section>
+
+      <section>
+        <h2>CXI (Cassini) Counter Landscape</h2>
+        <ul>
+          <li><strong>Throughput:</strong> <code>hni_sts_tx_ok_octets</code>, <code>hni_sts_rx_ok_octets</code></li>
+          <li><strong>Pushback:</strong> <code>parbs_tarb_pi_{posted,non_posted}_{blocked_cnt,pkts}</code></li>
+          <li><strong>Stalls/Timeouts:</strong> e.g., <code>hni_rx_stall_ixe_pktbuf_1</code>, timeout counters</li>
+        </ul>
+        <div class="placeholder">
+          <strong>Placeholder for Table:</strong> Counter families grouped as throughput / pushback / stalls / etc. (§2.2 in the paper in table form).
+        </div>
+        <aside class="notes">
+          Introduce the specific counters we read and why each family matters diagnostically.
+        </aside>
+      </section>
+
+      <section>
+        <h2>Prior Approaches &amp; Gap</h2>
+        <ul>
+          <li>Aggregates done post‑hoc → <strong>not time‑aligned</strong></li>
+          <li>System polling can miss per‑phase / per‑rail context</li>
+          <li>We make NIC telemetry a <strong>first‑class timeline signal</strong></li>
+        </ul>
+        <aside class="notes">
+          Contrast with tools that only provide end‑of‑job summaries; we add timeline tracks at NIC granularity.
+        </aside>
+      </section>
+
+      <!-- ──────────────────────────────── -->
+      <!-- Contribution & Integration       -->
+      <!-- ──────────────────────────────── -->
+
+      <section>
+        <h2>Implementation Overview</h2>
+        <ul>
+          <li>New <strong>CXI sampling plugin</strong> (<code>libCXISampling.so</code>)</li>
+          <li><strong>Generic</strong> LTTng‑UST tracepoint for NIC samples</li>
+          <li><code>iprof</code> integration &amp; <strong>Perfetto</strong> mapping</li>
+        </ul>
+        <aside class="notes">
+          Summarize what's new: plugin, generic event, and the export path into Perfetto for analysis.
+        </aside>
+      </section>
+
+      <section>
+        <h2>Build &amp; Discovery (Autotools)</h2>
+        <ul>
+          <li>New <code>cxi/</code> dir builds <code>libCXISampling.so</code></li>
+          <li>Dynamically discovered by <strong>iprof</strong>; <em>inert</em> on non‑CXI hosts</li>
+          <li>No vendor SDK: counters read via <strong>filesystem</strong></li>
+        </ul>
+        <aside class="notes">
+          Call out that deployment is simple and non‑intrusive; falls back gracefully without CXI hardware.
+        </aside>
+      </section>
+
+      <!-- ──────────────────────────────── -->
+      <!-- CXI Metric Sampling Design       -->
+      <!-- ──────────────────────────────── -->
+
+      <section>
+        <h2>Tracepoint Provider Design</h2>
+        <ul>
+          <li>Codegen produces <code>cxi_sampling.tp</code> → <code>cxi_sampling.h/.c</code></li>
+          <li><strong>Single generic event</strong>: (host, NIC, counter, value, timestamp)</li>
+          <li>Stable payload avoids per‑metric structs</li>
+        </ul>
+        <div class="placeholder">
+          <strong>Placeholder for Schema:</strong> Event fields and types table (the YAML file).
+        </div>
+        <aside class="notes">
+          A single generic event scales with counter sets and keeps ABI stable.
+        </aside>
+      </section>
+
+      <section>
+        <h2>Plugin Hot Path</h2>
+        <ul>
+          <li>Init: parse env, enumerate NICs, open files, register provider</li>
+          <li>Tick: read 64‑bit counters</li>
+          <li><strong>Emit‑on‑change</strong> to keep traces compact</li>
+        </ul>
+        <aside class="notes">
+          Emphasize efficiency: lightweight reads, derivations (zero shift), and change‑driven emission to minimize trace volume.
+        </aside>
+      </section>
+
+      <section>
+        <h2>Derived Metrics (Used in Analysis)</h2>
+        <ul>
+          <li><strong>Bytes/s</strong> from octet deltas</li>
+          <li><strong>Posted/Non-posted pushback ratios</strong> = <code>blocked_cnt / pkts</code></li>
+        </ul>
+        <aside class="notes">
+          These derived signals reduce cognitive load while preserving key insights (e.g., back‑pressure).
+        </aside>
+      </section>
+
+      <section>
+        <h2>Perfetto Tracks &amp; UX</h2>
+        <ul>
+          <li>One <strong>counter track</strong> per (host, interface, counter)</li>
+          <li>Tracks start at zero (offset by first sample) for readability</li>
+          <li>Use Perfetto filters/SQL to zoom on bursts and anomalies</li>
+        </ul>
+        <div class="placeholder">
+          <strong>Placeholder for Figure:</strong> Perfetto timeline with RX/TX, pushback, stall tracks.
+          <div class="sm caption">FIXME Figure from §5.3 in paper: Perfetto congestion view.</div>
+        </div>
+        <aside class="notes">
+          Show how counters appear in Perfetto and how analysts filter/focus to isolate anomalies.
+        </aside>
+      </section>
+
+      <!-- ──────────────────────────────── -->
+      <!-- Sampling Integration & Usage     -->
+      <!-- ──────────────────────────────── -->
+
+      <section>
+        <h2>Configuration &amp; Defaults</h2>
+        <ul>
+          <li><strong>Default 10 Hz (100 ms)</strong> sampling</li>
+          <li>Auto‑enables when counters are present; <em>no‑op</em> otherwise</li>
+          <li>Change‑only emission → compact traces</li>
+        </ul>
+        <aside class="notes">
+          Defaults are conservative and practical; trivial to enable and safe to leave on.
+        </aside>
+      </section>
+
+      <section>
+        <h2>Environment Variables (User Knobs)</h2>
+        <div class="two-col">
+          <ul class="tight">
+            <li><code>LTTNG_UST_CXI_SAMPLING_CXI</code> — master enable (set <code>0</code> to disable)</li>
+            <li><code>LTTNG_UST_CXI_SAMPLING_CXI_COUNTERS_FILE</code> — counters list (<code>rh:</code> prefix for retry‑handler)</li>
+            <li><code>LTTNG_UST_CXI_SAMPLING_CXI_PERIOD_MS</code> — sampling period (ms)</li>
+          </ul>
+          <div class="placeholder">
+            <strong>Placeholder for Table:</strong> FIXME, make this a table.
+          </div>
+        </div>
+        <aside class="notes">
+          Present exact variable names and their semantics; period in milliseconds, counters selectable via file.
+        </aside>
+      </section>
+
+      <section>
+        <h2>Base Paths (Paper‑Exact)</h2>
+        <ul>
+          <li><code>LTTNG_UST_CXI_SAMPLING_CXI_BASE</code> → default <code>/sys/class/cxi</code></li>
+          <li><code>LTTNG_UST_CXI_SAMPLING_CXI_RH_BASE</code> → default <code>/run/cxi</code></li>
+          <li>Paths used:
+            <div class="sm">
+              <code>$CXI_BASE/&lt;iface&gt;/device/telemetry/&lt;counter&gt;</code> and
+              <code>$CXI_RH_BASE/&lt;iface&gt;/&lt;counter&gt;</code>
+            </div>
+          </li>
+        </ul>
+        <aside class="notes">
+          Show where counters live; users can override to match site mounts or simulated trees.
+        </aside>
+      </section>
+
+      <section>
+        <h2>Running with <code>iprof</code></h2>
+        <ul>
+          <li><code>iprof --timeline --sample -- ./a.out</code></li>
+          <li>Example: set counters file and period (<code>...COUNTERS_FILE=mycounters.txt</code>, <code>...PERIOD_MS=50</code>)</li>
+          <li>Perfetto export produced automatically in timeline mode</li>
+        </ul>
+        <pre><code class="language-bash">LTTNG_UST_CXI_SAMPLING_CXI_COUNTERS_FILE=mycounters.txt \
+LTTNG_UST_CXI_SAMPLING_CXI_PERIOD_MS=50 \
+iprof --timeline --sample -- ./a.out
+</code></pre>
+        <aside class="notes">
+          Provide a concrete invocation that matches paper examples; stress that Perfetto output is automatic.
+        </aside>
+      </section>
+
+      <section>
+        <h2>Testing Without Hardware</h2>
+        <ul>
+          <li>“Fake device” files that <strong>increment on read</strong></li>
+          <li>Point <code>...CXI_BASE</code>/<code>...CXI_RH_BASE</code> to dummy tree</li>
+          <li>Verify trace values; BATS harness</li>
+        </ul>
+        <div class="placeholder">
+          <strong>Placeholder:</strong> Fake sysfs tree → plugin → assertions.
+        </div>
+        <aside class="notes">
+          CI‑friendly design: mock counters via filesystem to validate parsing and emission logic.
+        </aside>
+      </section>
+
+      <!-- ──────────────────────────────── -->
+      <!-- Examples / Case Studies          -->
+      <!-- ──────────────────────────────── -->
+
+      <section>
+        <h2>Microbenchmark Setup (Overhead)</h2>
+        <ul>
+          <li>Single node FMA loop, <strong>256×10⁹</strong> operations</li>
+          <li>Compare: baseline, THAPI only, THAPI+CXI at <strong>1 kHz / 100 Hz / 10 Hz / 1 Hz</strong></li>
+          <li><strong>Default 10 Hz</strong> is practical</li>
+        </ul>
+        <pre><code class="language-c">// Listing from paper (fma_bench.c)
+#include &lt;math.h&gt;
+#define MAD4(x,y,z)  x=fma(x,y,z);x=fma(x,y,z);x=fma(x,y,z);x=fma(x,y,z)
+#define MAD16(x,y,z) MAD4(x,y,z);MAD4(x,y,z);MAD4(x,y,z);MAD4(x,y,z)
+#define MAD64(x,y,z) MAD16(x,y,z);MAD16(x,y,z);MAD16(x,y,z);MAD16(x,y,z)
+int main(void){
+  const unsigned long N = 4000000000UL; // 4 billion iterations
+  volatile double x = 1.0, y = 2.0, z = 3.0;
+  for(unsigned long i = 0; i &lt; N; i++) MAD64(x,y,z);
+  return 0;
+}</code></pre>
+        <small class="caption">(FIXME make basement slide)Code listing from paper: FMA microbenchmark (<code>lst:fma-bench</code>).</small>
+        <aside class="notes">
+          Highlight simple CPU‑bound kernel to measure tracing/sampling overhead and trace size across rates.
+        </aside>
+      </section>
+
+      <section>
+        <h2>Overhead &amp; Trace Size (Results)</h2>
+        <ul>
+          <li>Baseline: <strong>10.363 ± 0.025 s</strong>; THAPI only: <strong>14.123 ± 0.326 s</strong></li>
+          <li>THAPI+CXI: <strong>14.132 ± 0.041 s (1 kHz)</strong>; <strong>14.156 ± 0.335 s (100 Hz)</strong></li>
+          <li>THAPI+CXI: <strong>14.177 ± 0.348 s (10 Hz)</strong>; <strong>14.178 ± 0.320 s (1 Hz)</strong></li>
+          <li>Trace sizes: <strong>174.84 MB</strong>, <strong>34.52 MB</strong>, <strong>13.65 MB</strong>, <strong>11.53 MB</strong> respectively</li>
+        </ul>
+        <small class="caption">(FIXME Make into a table) Runtime and trace size impact for varying CXI sampling rates.</small>
+        <aside class="notes">
+          Emphasize that CXI sampling adds negligible runtime beyond THAPI, and trace size scales with sampling rate.
+        </aside>
+      </section>
+
+      <section>
+        <h2>Point‑to‑Point Ping‑Pong (Method)</h2>
+        <ul>
+          <li><code>fi_pingpong</code> (libfabric CXI), <strong>100k</strong> round trips per pair</li>
+          <li>Two cases: <strong>256 B on cxi0↔cxi1</strong>, <strong>64 B on cxi2↔cxi3</strong></li>
+          <li>Record <strong>ΔTX/ΔRX octets</strong> per port</li>
+        </ul>
+        <pre><code class="language-bash">fi_pingpong -S &lt;size&gt; -I 100000 -e rdm -m tagged -p cxi -d &lt;interface&gt;           # start
+fi_pingpong -S &lt;size&gt; -I 100000 -e rdm -m tagged -p cxi -d &lt;interface&gt; &lt;server&gt;  # connect</code></pre>
+        <aside class="notes">
+          This validates per‑NIC attribution and allows inferring protocol overhead from octet deltas.
+        </aside>
+      </section>
+
+      <section>
+        <h2>Point‑to‑Point (Results)</h2>
+        <ul>
+          <li>Overhead ≈ <strong>181 B/msg</strong> (both 256 B and 64 B cases)</li>
+          <li>Per‑NIC tracks confirm traffic on intended rails</li>
+          <li>Mapping verified; no cross‑talk between ports</li>
+        </ul>
+        <small class="caption">Per‑port byte deltas and inferred overhead.</small>
+        <aside class="notes">
+          Stress that rail attribution is correct and overhead is consistent across payload sizes.
+        </aside>
+      </section>
+
+      <section>
+        <h2>Congested Collectives Scenario</h2>
+        <ul>
+          <li>FIXME insert Aurora node architecture slide here.
+          <li>Up to <strong>12</strong> concurrent jobs; <strong>16 ranks/job</strong> across <strong>2 nodes</strong></li>
+          <li>Message size <strong>512 MiB</strong> per rank; trace <strong>one</strong> job/batch</li>
+          <li>Track bytes, posted/non‑posted pushback, stall/timeout events</li>
+        </ul>
+        <aside class="notes">
+          Define the congestion setup used to stress the network while tracing one job for clarity.
+        </aside>
+      </section>
+
+      <section>
+        <h2>Congested Collectives Findings</h2>
+        <ul>
+          <li>FIXME maybe add Perfetto figure just before this slide instead of above (will help tell the story)
+          <li><strong>Posted pushback ratio</strong> rises with concurrency; <strong>non‑posted</strong> near zero</li>
+          <li><strong>RX packet‑buffer stall cycles</strong> escalate; Allreduce latency grows (~<strong>1.16 s → 1.43 s</strong>)</li>
+          <li>Root cause: <strong>receive‑side back‑pressure</strong>, not wire‑rate saturation</li>
+        </ul>
+        <div class="placeholder">
+          <strong>Placeholder for Figure:</strong> FIXME add <code>metric_plot.svg/png</code> (whatever works).
+          <div class="sm caption">Summary metrics vs. concurrent <code>Allreduce</code> processes.</div>
+        </div>
+        <aside class="notes">
+          Walk through the four‑panel summary: posted vs non‑posted pushback, RX stall cycles, and latency trend.
+        </aside>
+      </section>
+
+      <!-- ──────────────────────────────── -->
+      <!-- Results, Lessons, Limits         -->
+      <!-- ──────────────────────────────── -->
+
+      <section>
+        <h2>What You Can Now See</h2>
+        <ul>
+          <li>Rail imbalance &amp; <strong>single‑rail misconfigurations</strong></li>
+          <li><strong>Receive‑side back‑pressure</strong> and phase‑aligned bursts</li>
+          <li>Per‑NIC timelines aligned with MPI/compute context</li>
+        </ul>
+        <div class="placeholder">
+          <strong>Placeholder:</strong> FIXME create an annotated Perfetto timeline crop showing all this stuff.
+        </div>
+        <aside class="notes">
+          Summarize new diagnostic leverage from adding time‑aligned NIC signals to traces.
+        </aside>
+      </section>
+
+      <section>
+        <h2>Tips &amp; Guidance</h2>
+        <ul>
+          <li>Curate a <strong>small</strong> counter set; more ≠ better</li>
+          <li>Prefer <strong>rates/ratios</strong> over raw counts</li>
+          <li><strong>Emit‑on‑change</strong> keeps traces readable</li>
+        </ul>
+        <aside class="notes">
+          Provide pragmatic guidance to keep timelines interpretable and storage reasonable.
+        </aside>
+      </section>
+
+      <section>
+        <h2>Some Limitations</h2>
+        <ul>
+          <li>FIXME should I remove this slide?</li>
+          <li><strong>Vendor‑specific</strong> today (Cassini/CXI)</li>
+          <li><strong>Sampling</strong> granularity; very short events may alias (raise Hz)</li>
+          <li>Interface‑level attribution; trace volume grows with rate/scale</li>
+        </ul>
+        <aside class="notes">
+          Be precise about current scope and known trade‑offs; sampling trade‑offs are inherent.
+        </aside>
+      </section>
+
+      <section>
+        <h2>Future Work</h2>
+        <ul>
+          <li>Enable <strong>derived metrics</strong> (bytes/s, packets/s), light analytics?</li>
+          <li><strong>Adaptive sampling</strong> / budgeted selection</li>
+          <li>Other NICs</li>
+        </ul>
+        <aside class="notes">
+          Outline near‑term extensions to improve signal quality and analysis ergonomics.
+        </aside>
+      </section>
+
+      <section>
+        <h2>Conclusion</h2>
+        <ul>
+          <li><strong>Drop‑in</strong> THAPI CXI sampler; run with <code>iprof</code></li>
+          <li><strong>Time‑aligned, per‑NIC</strong> telemetry at <strong>negligible incremental cost</strong></li>
+          <li>Case studies show practical diagnosis of congestion &amp; imbalance</li>
+        </ul>
+        <aside class="notes">
+          Close the loop: easy enablement, low overhead, and clear value in real scenarios.
+        </aside>
+      </section>
+
+      <!-- (Optional) Backup slide -->
+      <section>
+        <h2>Backup — Env‑Vars &amp; Paths Cheat Sheet</h2>
+        <div class="two-col">
+          <ul class="tight">
+            <li><code>LTTNG_UST_CXI_SAMPLING_CXI</code></li>
+            <li><code>..._CXI_COUNTERS_FILE</code></li>
+            <li><code>..._CXI_PERIOD_MS</code></li>
+            <li><code>..._CXI_BASE</code></li>
+            <li><code>..._CXI_RH_BASE</code></li>
+          </ul>
+          <ul class="tight">
+            <li>Defaults: <code>/sys/class/cxi</code>, <code>/run/cxi</code></li>
+            <li>Counters file: one per line; <code>rh:</code> for retry‑handler</li>
+            <li>Paths:
+              <div class="sm"><code>$CXI_BASE/&lt;iface&gt;/device/telemetry/&lt;counter&gt;</code></div>
+              <div class="sm"><code>$CXI_RH_BASE/&lt;iface&gt;/&lt;counter&gt;</code></div>
+            </li>
+          </ul>
+        </div>
+        <aside class="notes">
+          One-screen crib for users: env knobs, defaults, and where to expect counters.
+        </aside>
+      </section>
+
+    </div>
+  </div>
+
+  <!-- Reveal.js scripts (CDN) -->
+  <script src="https://unpkg.com/reveal.js@4/dist/reveal.js"></script>
+  <script src="https://unpkg.com/reveal.js@4/plugin/notes/notes.js"></script>
+  <script src="https://unpkg.com/reveal.js@4/plugin/highlight/highlight.js"></script>
+  <script src="https://unpkg.com/reveal.js@4/plugin/search/search.js"></script>
+  <script src="https://unpkg.com/reveal.js@4/plugin/zoom/zoom.js"></script>
+
+  <script>
+    Reveal.initialize({
+      hash: true,
+      progress: true,
+      slideNumber: true,
+      center: false,
+      transition: 'fade',
+      plugins: [ RevealNotes, RevealHighlight, RevealSearch, RevealZoom ]
+    });
+  </script>
+
+<!--
+  To keep the slides manageable here, Reveal.js and plugins are loaded from CDN (no other network deps). For a fully self-contained single-file deck:
+    1) Download reveal.js@4 "dist" assets (reveal.css, theme/white.css, reveal.js, plugin/*);
+    2) Replace the <link>/<script> tags with data URIs or embed their file contents directly into <style>/<script> blocks;
+    3) Optionally inline the highlight CSS. This preserves identical behavior offline.
+-->
+</body>
+</html>
