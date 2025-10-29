@@ -103,7 +103,7 @@
           <li><strong>Stalls/Timeouts:</strong> e.g., <code>hni_rx_stall_ixe_pktbuf_1</code>, timeout counters</li>
         </ul>
         <div class="placeholder">
-          <strong>Placeholder for Table:</strong> Counter families grouped as throughput / pushback / stalls / etc. (§2.2 in the paper in table form).
+          <strong>Placeholder for Table:</strong>(FIXME create two colmun and add table)Counter families grouped as throughput / pushback / stalls / etc. (§2.2 in the paper in table form).
         </div>
         <aside class="notes">
           Introduce the specific counters we read and why each family matters diagnostically.
@@ -182,10 +182,11 @@
       </section>
 
       <section>
-        <h2>Derived Metrics (Used in Analysis)</h2>
+        <h2>Derived Metrics</h2>
         <ul>
           <li><strong>Bytes/s</strong> from octet deltas</li>
           <li><strong>Posted/Non-posted pushback ratios</strong> = <code>blocked_cnt / pkts</code></li>
+          <li>FIXME add more details here, remove,  or merge with other slides (either the CXI counter landscape or one of the results slides)</li>
         </ul>
         <aside class="notes">
           These derived signals reduce cognitive load while preserving key insights (e.g., back‑pressure).
@@ -201,7 +202,7 @@
         </ul>
         <div class="placeholder">
           <strong>Placeholder for Figure:</strong> Perfetto timeline with RX/TX, pushback, stall tracks.
-          <div class="sm caption">FIXME Figure from §5.3 in paper: Perfetto congestion view.</div>
+          <div class="sm caption">FIXME Figure from §5.3 in paper or new figure (also maybe in basement slide): Perfetto congestion view.</div>
         </div>
         <aside class="notes">
           Show how counters appear in Perfetto and how analysts filter/focus to isolate anomalies.
@@ -242,7 +243,7 @@
       </section>
 
       <section>
-        <h2>Base Paths (Paper‑Exact)</h2>
+        <h2>Base Paths</h2>
         <ul>
           <li><code>LTTNG_UST_CXI_SAMPLING_CXI_BASE</code> → default <code>/sys/class/cxi</code></li>
           <li><code>LTTNG_UST_CXI_SAMPLING_CXI_RH_BASE</code> → default <code>/run/cxi</code></li>
@@ -252,6 +253,7 @@
               <code>$CXI_RH_BASE/&lt;iface&gt;/&lt;counter&gt;</code>
             </div>
           </li>
+          <li>FIXME how can I make this more readable?</li>
         </ul>
         <aside class="notes">
           Show where counters live; users can override to match site mounts or simulated trees.
@@ -280,6 +282,7 @@ iprof --timeline --sample -- ./a.out
           <li>“Fake device” files that <strong>increment on read</strong></li>
           <li>Point <code>...CXI_BASE</code>/<code>...CXI_RH_BASE</code> to dummy tree</li>
           <li>Verify trace values; BATS harness</li>
+          <li>FIXME do I need this slide?</li>
         </ul>
         <div class="placeholder">
           <strong>Placeholder:</strong> Fake sysfs tree → plugin → assertions.
@@ -299,8 +302,9 @@ iprof --timeline --sample -- ./a.out
           <li>Single node FMA loop, <strong>256×10⁹</strong> operations</li>
           <li>Compare: baseline, THAPI only, THAPI+CXI at <strong>1 kHz / 100 Hz / 10 Hz / 1 Hz</strong></li>
           <li><strong>Default 10 Hz</strong> is practical</li>
+          <li>FIXME either two column slide or move listing to basement</li>
         </ul>
-        <pre><code class="language-c">// Listing from paper (fma_bench.c)
+        <pre><code class="language-c">// fma_bench.c
 #include &lt;math.h&gt;
 #define MAD4(x,y,z)  x=fma(x,y,z);x=fma(x,y,z);x=fma(x,y,z);x=fma(x,y,z)
 #define MAD16(x,y,z) MAD4(x,y,z);MAD4(x,y,z);MAD4(x,y,z);MAD4(x,y,z)
@@ -351,6 +355,7 @@ fi_pingpong -S &lt;size&gt; -I 100000 -e rdm -m tagged -p cxi -d &lt;interface&g
           <li>Overhead ≈ <strong>181 B/msg</strong> (both 256 B and 64 B cases)</li>
           <li>Per‑NIC tracks confirm traffic on intended rails</li>
           <li>Mapping verified; no cross‑talk between ports</li>
+          <li>FIXME should I add Perfetto timeline or table from paper "validating" above?</li>
         </ul>
         <small class="caption">Per‑port byte deltas and inferred overhead.</small>
         <aside class="notes">
@@ -375,6 +380,7 @@ fi_pingpong -S &lt;size&gt; -I 100000 -e rdm -m tagged -p cxi -d &lt;interface&g
         <h2>Congested Collectives Findings</h2>
         <ul>
           <li>FIXME maybe add Perfetto figure just before this slide instead of above (will help tell the story)
+          <li>FIXME maybe put all of this in basement slide and just say it in words with plot as main content
           <li><strong>Posted pushback ratio</strong> rises with concurrency; <strong>non‑posted</strong> near zero</li>
           <li><strong>RX packet‑buffer stall cycles</strong> escalate; Allreduce latency grows (~<strong>1.16 s → 1.43 s</strong>)</li>
           <li>Root cause: <strong>receive‑side back‑pressure</strong>, not wire‑rate saturation</li>
@@ -468,6 +474,7 @@ fi_pingpong -S &lt;size&gt; -I 100000 -e rdm -m tagged -p cxi -d &lt;interface&g
             <li><code>..._CXI_RH_BASE</code></li>
           </ul>
           <ul class="tight">
+            <li>FIXME this slide is too hard to read</li>
             <li>Defaults: <code>/sys/class/cxi</code>, <code>/run/cxi</code></li>
             <li>Counters file: one per line; <code>rh:</code> for retry‑handler</li>
             <li>Paths:
