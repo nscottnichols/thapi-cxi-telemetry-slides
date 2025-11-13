@@ -142,6 +142,24 @@
         </aside>
       </section>
 
+      <!-- ──────────────────────────────── -->
+      <!-- Visualization / UX               -->
+      <!-- ──────────────────────────────── -->
+      <section>
+        <h2>Time-aligned timeline in Perfetto</h2>
+        <ul>
+          <li>One <strong>counter track</strong> per (host, interface, counter)</li>
+          <li>Tracks start at zero (offset by first sample) for readability</li>
+          <li>Zoom/SQL to isolate bursts &amp; anomalies across phases</li>
+        </ul>
+        <img class="fit" src="assets/images/perfetto_screenshot.png" alt="Perfetto screenshot: RX/TX and pushback tracks">
+        <small class="caption">Perfetto timeline with RX/TX octets and pushback/stall tracks.</small>
+        <!-- FIXME add new screenshot of Perfetto here and fix caption --!>
+        <aside class="notes">
+          Show how we overlay NIC counters onto the same timeline as app events; this is the main user experience.
+        </aside>
+      </section>
+
       <section>
         <h2>Prior Approaches &amp; Gap</h2>
         <ul>
