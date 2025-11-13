@@ -131,7 +131,8 @@
         <ul>
           <li><strong>Throughput:</strong> <code>hni_sts_tx_ok_octets</code>, <code>hni_sts_rx_ok_octets</code></li>
           <li><strong>Pushback:</strong> <code>parbs_tarb_pi_{posted,non_posted}_{blocked_cnt,pkts}</code></li>
-          <li><strong>Stalls/Timeouts:</strong> e.g., <code>hni_rx_stall_ixe_pktbuf_1</code>, timeout counters</li>
+          <li><strong>Stalls/Timeouts:</strong> e.g., <code>hni_rx_stall_ixe_pktbuf_1</code>, selected timeout counters</li>
+          <!-- <li><strong>Deltas → tracks</strong>: emit bytes/s, ratios in-viewer to cut clutter</li> --!>
         </ul>
         <div class="placeholder">
           <strong>Placeholder for Table:</strong>(FIXME create two colmun and add table)Counter families grouped as throughput / pushback / stalls / etc. (§2.2 in the paper in table form).
