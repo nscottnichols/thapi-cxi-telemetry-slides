@@ -178,105 +178,29 @@
       </section>
 
       <!-- ──────────────────────────────── -->
-      <!-- Contribution & Integration       -->
+      <!-- Implementation (compressed)      -->
       <!-- ──────────────────────────────── -->
-
       <section>
-        <h2>Implementation Overview</h2>
+        <h2>Implementation (1/2)</h2>
         <ul>
-          <li>New <strong>CXI sampling plugin</strong> (<code>libCXISampling.so</code>)</li>
-          <li><strong>Generic</strong> LTTng‑UST tracepoint for NIC samples</li>
-          <li><code>iprof</code> integration &amp; <strong>Perfetto</strong> mapping</li>
+          <li>LTTng-UST tracepoints for CXI sampling integrated in THAPI pipeline</li>
+          <li>Device files probed; per-interface readers tied to sampling loop</li>
+          <li>Emits change-driven counter events to limit trace volume</li>
         </ul>
         <aside class="notes">
-          Summarize what's new: plugin, generic event, and the export path into Perfetto for analysis.
+          Structural overview only; details in the paper. Focus on tracepoints, per-interface readers, change-driven emission.
         </aside>
       </section>
 
       <section>
-        <h2>Build &amp; Discovery (Autotools)</h2>
+        <h2>Implementation (2/2)</h2>
         <ul>
-          <li>New <code>cxi/</code> dir builds <code>libCXISampling.so</code></li>
-          <li>Dynamically discovered by <strong>iprof</strong>; <em>inert</em> on non‑CXI hosts</li>
-          <li>No vendor SDK: counters read via <strong>filesystem</strong></li>
+          <li>Derived in viewer: bytes/s from octet deltas; pushback <code>blocked_cnt/pkts</code></li>
+          <li>Tracks per (host, interface, counter); zero-offset for readability</li>
+          <li>Designed for negligible overhead at default 10 Hz</li>
         </ul>
         <aside class="notes">
-          Call out that deployment is simple and non‑intrusive; falls back gracefully without CXI hardware.
-        </aside>
-      </section>
-
-      <!-- ──────────────────────────────── -->
-      <!-- CXI Metric Sampling Design       -->
-      <!-- ──────────────────────────────── -->
-
-      <section>
-        <h2>Tracepoint Provider Design</h2>
-        <ul>
-          <li>Codegen produces <code>cxi_sampling.tp</code> → <code>cxi_sampling.h/.c</code></li>
-          <li><strong>Single generic event</strong>: (host, NIC, counter, value, timestamp)</li>
-          <li>Stable payload avoids per‑metric structs</li>
-        </ul>
-        <div class="placeholder">
-          <strong>Placeholder for Schema:</strong> Event fields and types table (the YAML file).
-        </div>
-        <aside class="notes">
-          A single generic event scales with counter sets and keeps ABI stable.
-        </aside>
-      </section>
-
-      <section>
-        <h2>Plugin Hot Path</h2>
-        <ul>
-          <li>Init: parse env, enumerate NICs, open files, register provider</li>
-          <li>Tick: read 64‑bit counters</li>
-          <li><strong>Emit‑on‑change</strong> to keep traces compact</li>
-        </ul>
-        <aside class="notes">
-          Emphasize efficiency: lightweight reads, derivations (zero shift), and change‑driven emission to minimize trace volume.
-        </aside>
-      </section>
-
-      <section>
-        <h2>Derived Metrics</h2>
-        <ul>
-          <li><strong>Bytes/s</strong> from octet deltas</li>
-          <li><strong>Posted/Non-posted pushback ratios</strong> = <code>blocked_cnt / pkts</code></li>
-          <li>FIXME add more details here, remove,  or merge with other slides (either the CXI counter landscape or one of the results slides)</li>
-        </ul>
-        <aside class="notes">
-          These derived signals reduce cognitive load while preserving key insights (e.g., back‑pressure).
-        </aside>
-      </section>
-
-      <section>
-        <h2>Perfetto Tracks &amp; UX</h2>
-        <ul>
-          <li>One <strong>counter track</strong> per (host, interface, counter)</li>
-          <li>Tracks start at zero (offset by first sample) for readability</li>
-          <li>Use Perfetto filters/SQL to zoom on bursts and anomalies</li>
-        </ul>
-        <div class="placeholder">
-          <strong>Placeholder for Figure:</strong> Perfetto timeline with RX/TX, pushback, stall tracks.
-          <div class="sm caption">FIXME Figure from §5.3 in paper or new figure (also maybe in basement slide): Perfetto congestion view.</div>
-        </div>
-        <aside class="notes">
-          Show how counters appear in Perfetto and how analysts filter/focus to isolate anomalies.
-        </aside>
-      </section>
-
-      <!-- ──────────────────────────────── -->
-      <!-- Sampling Integration & Usage     -->
-      <!-- ──────────────────────────────── -->
-
-      <section>
-        <h2>Configuration &amp; Defaults</h2>
-        <ul>
-          <li><strong>Default 10 Hz (100 ms)</strong> sampling</li>
-          <li>Auto‑enables when counters are present; <em>no‑op</em> otherwise</li>
-          <li>Change‑only emission → compact traces</li>
-        </ul>
-        <aside class="notes">
-          Defaults are conservative and practical; trivial to enable and safe to leave on.
+          Keep it at two slides; remind that derived metrics are light and that default rate targets negligible overhead.
         </aside>
       </section>
 
