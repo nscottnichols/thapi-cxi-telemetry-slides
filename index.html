@@ -106,15 +106,19 @@
         </aside>
       </section>
 
+      <!-- ──────────────────────────────── -->
+      <!-- Challenges                       -->
+      <!-- ──────────────────────────────── -->
+
       <section>
-        <h2>THAPI in a Nutshell</h2>
+        <h2>Challenges: congestion is real + tools fall short</h2>
         <ul>
-          <li>THAPI (Tracing Heterogeneous APIs) instruments APIs; logs via <strong>LTTng‑UST</strong></li>
-          <li><code>iprof --timeline</code> exports to <strong>Perfetto</strong> for interactive analysis</li>
-          <li>Sampling backends existed; <strong>NIC counters were missing</strong></li>
+          <li><strong>Congestion exists</strong>: pushback/stalls show up in real AI-for-science runs</li>
+          <li><strong>Post-hoc aggregates ≠ timelines</strong>: miss phase-specific anomalies</li>
+          <li><strong>Tool gap</strong>: few ways to see <strong>CXI counters time-aligned</strong> with app traces</li>
         </ul>
         <aside class="notes">
-          Place CXI sampling in the existing tracing/export pipeline; Perfetto is the user-facing UI.
+          State the problem clearly: we need per-NIC, time-aligned counters in the same view as program phases.
         </aside>
       </section>
 
