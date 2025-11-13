@@ -71,6 +71,30 @@
       <!-- ──────────────────────────────── -->
 
       <section>
+        <h2>AI-for-Science needs fast collectives at scale</h2>
+        <ul>
+          <li>Training/inference hinge on <strong>collectives</strong> (all-reduce, all-to-all) across racks</li>
+          <li><strong>Small congestion</strong> events → <strong>minutes</strong> lost at 10k+ ranks</li>
+          <li>Need <strong>time-aligned NIC telemetry</strong> next to app phases to see <em>when/why</em> it slows</li>
+        </ul>
+        <aside class="notes">
+          Make urgency tangible: collective performance determines time-to-solution; need aligned telemetry to diagnose.
+        </aside>
+      </section>
+
+      <section>
+        <h2>Examples driving urgency</h2>
+        <ul>
+          <li><strong>AERIS</strong> — AI-for-science training with intense all-reduce <em>(10080 nodes, 12 ranks per node)</em></li>
+          <li><strong>MPROT-DPO</strong> — distributed preference optimization with collective bursts <em>(3800 nodes, 12 ranks per node)</em></li>
+          <li><strong>ORBIT-2</strong> — multi-GPU/multi-node workflows with dense collectives <em>(8192 nodes, 12 ranks per node)</em></li>
+        </ul>
+        <aside class="notes">
+          Concrete names to anchor the motivation; we’ll verify counts offline. The point is: collectives stress the fabric.
+        </aside>
+      </section>
+
+      <section>
         <h2>Why NIC Telemetry in Traces?</h2>
         <ul>
           <li>End‑of‑job summaries lack <strong>time alignment</strong> with phases</li>
