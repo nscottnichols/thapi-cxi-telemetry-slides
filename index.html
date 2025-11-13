@@ -204,73 +204,6 @@
         </aside>
       </section>
 
-      <section>
-        <h2>Environment Variables (User Knobs)</h2>
-        <div class="two-col">
-          <ul class="tight">
-            <li><code>LTTNG_UST_CXI_SAMPLING_CXI</code> — master enable (set <code>0</code> to disable)</li>
-            <li><code>LTTNG_UST_CXI_SAMPLING_CXI_COUNTERS_FILE</code> — counters list (<code>rh:</code> prefix for retry‑handler)</li>
-            <li><code>LTTNG_UST_CXI_SAMPLING_CXI_PERIOD_MS</code> — sampling period (ms)</li>
-          </ul>
-          <div class="placeholder">
-            <strong>Placeholder for Table:</strong> FIXME, make this a table.
-          </div>
-        </div>
-        <aside class="notes">
-          Present exact variable names and their semantics; period in milliseconds, counters selectable via file.
-        </aside>
-      </section>
-
-      <section>
-        <h2>Base Paths</h2>
-        <ul>
-          <li><code>LTTNG_UST_CXI_SAMPLING_CXI_BASE</code> → default <code>/sys/class/cxi</code></li>
-          <li><code>LTTNG_UST_CXI_SAMPLING_CXI_RH_BASE</code> → default <code>/run/cxi</code></li>
-          <li>Paths used:
-            <div class="sm">
-              <code>$CXI_BASE/&lt;iface&gt;/device/telemetry/&lt;counter&gt;</code> and
-              <code>$CXI_RH_BASE/&lt;iface&gt;/&lt;counter&gt;</code>
-            </div>
-          </li>
-          <li>FIXME how can I make this more readable?</li>
-        </ul>
-        <aside class="notes">
-          Show where counters live; users can override to match site mounts or simulated trees.
-        </aside>
-      </section>
-
-      <section>
-        <h2>Running with <code>iprof</code></h2>
-        <ul>
-          <li><code>iprof --timeline --sample -- ./a.out</code></li>
-          <li>Example: set counters file and period (<code>...COUNTERS_FILE=mycounters.txt</code>, <code>...PERIOD_MS=50</code>)</li>
-          <li>Perfetto export produced automatically in timeline mode</li>
-        </ul>
-        <pre><code class="language-bash">LTTNG_UST_CXI_SAMPLING_CXI_COUNTERS_FILE=mycounters.txt \
-LTTNG_UST_CXI_SAMPLING_CXI_PERIOD_MS=50 \
-iprof --timeline --sample -- ./a.out
-</code></pre>
-        <aside class="notes">
-          Provide a concrete invocation that matches paper examples; stress that Perfetto output is automatic.
-        </aside>
-      </section>
-
-      <section>
-        <h2>Testing Without Hardware</h2>
-        <ul>
-          <li>“Fake device” files that <strong>increment on read</strong></li>
-          <li>Point <code>...CXI_BASE</code>/<code>...CXI_RH_BASE</code> to dummy tree</li>
-          <li>Verify trace values; BATS harness</li>
-          <li>FIXME do I need this slide?</li>
-        </ul>
-        <div class="placeholder">
-          <strong>Placeholder:</strong> Fake sysfs tree → plugin → assertions.
-        </div>
-        <aside class="notes">
-          CI‑friendly design: mock counters via filesystem to validate parsing and emission logic.
-        </aside>
-      </section>
-
       <!-- ──────────────────────────────── -->
       <!-- Examples / Case Studies          -->
       <!-- ──────────────────────────────── -->
@@ -466,6 +399,74 @@ fi_pingpong -S &lt;size&gt; -I 100000 -e rdm -m tagged -p cxi -d &lt;interface&g
           One-screen crib for users: env knobs, defaults, and where to expect counters.
         </aside>
       </section>
+
+      <section>
+        <h2>Environment Variables (User Knobs)</h2>
+        <div class="two-col">
+          <ul class="tight">
+            <li><code>LTTNG_UST_CXI_SAMPLING_CXI</code> — master enable (set <code>0</code> to disable)</li>
+            <li><code>LTTNG_UST_CXI_SAMPLING_CXI_COUNTERS_FILE</code> — counters list (<code>rh:</code> prefix for retry‑handler)</li>
+            <li><code>LTTNG_UST_CXI_SAMPLING_CXI_PERIOD_MS</code> — sampling period (ms)</li>
+          </ul>
+          <div class="placeholder">
+            <strong>Placeholder for Table:</strong> FIXME, make this a table.
+          </div>
+        </div>
+        <aside class="notes">
+          Present exact variable names and their semantics; period in milliseconds, counters selectable via file.
+        </aside>
+      </section>
+
+      <section>
+        <h2>Base Paths</h2>
+        <ul>
+          <li><code>LTTNG_UST_CXI_SAMPLING_CXI_BASE</code> → default <code>/sys/class/cxi</code></li>
+          <li><code>LTTNG_UST_CXI_SAMPLING_CXI_RH_BASE</code> → default <code>/run/cxi</code></li>
+          <li>Paths used:
+            <div class="sm">
+              <code>$CXI_BASE/&lt;iface&gt;/device/telemetry/&lt;counter&gt;</code> and
+              <code>$CXI_RH_BASE/&lt;iface&gt;/&lt;counter&gt;</code>
+            </div>
+          </li>
+          <li>FIXME how can I make this more readable?</li>
+        </ul>
+        <aside class="notes">
+          Show where counters live; users can override to match site mounts or simulated trees.
+        </aside>
+      </section>
+
+      <section>
+        <h2>Running with <code>iprof</code></h2>
+        <ul>
+          <li><code>iprof --timeline --sample -- ./a.out</code></li>
+          <li>Example: set counters file and period (<code>...COUNTERS_FILE=mycounters.txt</code>, <code>...PERIOD_MS=50</code>)</li>
+          <li>Perfetto export produced automatically in timeline mode</li>
+        </ul>
+        <pre><code class="language-bash">LTTNG_UST_CXI_SAMPLING_CXI_COUNTERS_FILE=mycounters.txt \
+LTTNG_UST_CXI_SAMPLING_CXI_PERIOD_MS=50 \
+iprof --timeline --sample -- ./a.out
+</code></pre>
+        <aside class="notes">
+          Provide a concrete invocation that matches paper examples; stress that Perfetto output is automatic.
+        </aside>
+      </section>
+
+      <section>
+        <h2>Testing Without Hardware</h2>
+        <ul>
+          <li>“Fake device” files that <strong>increment on read</strong></li>
+          <li>Point <code>...CXI_BASE</code>/<code>...CXI_RH_BASE</code> to dummy tree</li>
+          <li>Verify trace values; BATS harness</li>
+          <li>FIXME do I need this slide?</li>
+        </ul>
+        <div class="placeholder">
+          <strong>Placeholder:</strong> Fake sysfs tree → plugin → assertions.
+        </div>
+        <aside class="notes">
+          CI‑friendly design: mock counters via filesystem to validate parsing and emission logic.
+        </aside>
+      </section>
+
 
     </div>
   </div>
