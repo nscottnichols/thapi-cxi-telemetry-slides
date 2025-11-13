@@ -94,18 +94,6 @@
         </aside>
       </section>
 
-      <section>
-        <h2>Why NIC Telemetry in Traces?</h2>
-        <ul>
-          <li>End‑of‑job summaries lack <strong>time alignment</strong> with phases</li>
-          <li><strong>Per‑NIC</strong> view exposes rail imbalance &amp; transient congestion</li>
-          <li>NIC counters complement API traces (MPI/OpenMP/GPU)</li>
-        </ul>
-        <aside class="notes">
-          Motivate the gap: without time‑aligned NIC signals, transient issues get missed. Per‑NIC attribution matters when multi‑rail is used.
-        </aside>
-      </section>
-
       <!-- ──────────────────────────────── -->
       <!-- Challenges                       -->
       <!-- ──────────────────────────────── -->
@@ -119,6 +107,22 @@
         </ul>
         <aside class="notes">
           State the problem clearly: we need per-NIC, time-aligned counters in the same view as program phases.
+        </aside>
+      </section>
+
+      <!-- ──────────────────────────────── -->
+      <!-- What we built                    -->
+      <!-- ──────────────────────────────── -->
+
+      <section>
+        <h2>What we built (THAPI + CXI sampling)</h2>
+        <ul>
+          <li><strong>THAPI</strong> integrates with tracing (LTTng-UST) and <strong>exports to Perfetto</strong></li>
+          <li>New plugin samples <strong>CXI (Cassini) NIC counters</strong> and <strong>time-aligns</strong> with app events</li>
+          <li><strong>Default 10 Hz</strong> → <strong>negligible incremental overhead</strong> (paper)</li>
+        </ul>
+        <aside class="notes">
+          Define THAPI and CXI once; emphasize time alignment and the cost model at default rate, consistent with the paper.
         </aside>
       </section>
 
