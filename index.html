@@ -161,6 +161,23 @@
       </section>
 
       <!-- ──────────────────────────────── -->
+      <!-- How to use                       -->
+      <!-- ──────────────────────────────── -->
+      <section>
+        <h2>How to use it (<code>iprof</code>)</h2>
+        <ul>
+          <li>Run: <code>iprof --timeline --sample -- ./a.out</code></li>
+          <li>Knobs: <code>...CXI_PERIOD_MS=100</code> (default 10 Hz), <code>...CXI_COUNTERS_FILE=foo.txt</code></li>
+          <!-- FIXME add real env vars here -->
+          <li>Perfetto export produced automatically in <em>timeline</em> mode</li>
+        </ul>
+        <aside class="notes">
+          One command, two knobs. Perfetto output comes out of the box; full env-var cheat sheet in backup.
+          <!-- FIXME add cheat sheet to end !-->
+        </aside>
+      </section>
+
+      <!-- ──────────────────────────────── -->
       <!-- Contribution & Integration       -->
       <!-- ──────────────────────────────── -->
 
