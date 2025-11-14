@@ -73,12 +73,21 @@
       <section>
         <h2>Examples driving urgency</h2>
         <ul>
-          <li><strong>AERIS</strong> — AI-for-science training with intense all-reduce <em>(10080 nodes, 12 ranks per node)</em></li>
-          <li><strong>MPROT-DPO</strong> — distributed preference optimization with collective bursts <em>(3800 nodes, 12 ranks per node)</em></li>
-          <li><strong>ORBIT-2</strong> — multi-GPU/multi-node workflows with dense collectives <em>(8192 nodes, 12 ranks per node)</em></li>
+          <li>
+            <strong>AERIS</strong> — diffusion-based Earth system forecasting
+            <em>(10,080 Aurora nodes, 12 ranks per node)</em>
+          </li>
+          <li>
+            <strong>MProt-DPO</strong> — multimodal protein design with Direct Preference Optimization
+            <em>(3,200 Aurora nodes, 12 ranks per node)</em>
+          </li>
+          <li>
+            <strong>ORBIT-2</strong> — ViT-based climate downscaling
+            <em>(up to 8,192 Frontier nodes, 8 ranks per node)</em>
+          </li>
         </ul>
         <aside class="notes">
-          Concrete names to anchor the motivation; we’ll verify counts offline. The point is: collectives stress the fabric.
+          Concrete names to anchor the motivation: exascale diffusion (AERIS), DPO protein design (MProt-DPO), and ViT downscaling (ORBIT-2) all stress the fabric with large, synchronized collectives.
         </aside>
       </section>
 
