@@ -197,73 +197,6 @@
       <!-- ──────────────────────────────── -->
 
       <section>
-        <h2>Microbenchmark Setup (Overhead)</h2>
-        <ul>
-          <li>Single node FMA loop, <strong>256×10⁹</strong> operations</li>
-          <li>Compare: baseline, THAPI only, THAPI+CXI at <strong>1 kHz / 100 Hz / 10 Hz / 1 Hz</strong></li>
-          <li><strong>Default 10 Hz</strong> is practical</li>
-          <li>FIXME either two column slide or move listing to basement</li>
-        </ul>
-        <pre><code class="language-c">// fma_bench.c
-#include &lt;math.h&gt;
-#define MAD4(x,y,z)  x=fma(x,y,z);x=fma(x,y,z);x=fma(x,y,z);x=fma(x,y,z)
-#define MAD16(x,y,z) MAD4(x,y,z);MAD4(x,y,z);MAD4(x,y,z);MAD4(x,y,z)
-#define MAD64(x,y,z) MAD16(x,y,z);MAD16(x,y,z);MAD16(x,y,z);MAD16(x,y,z)
-int main(void){
-  const unsigned long N = 4000000000UL; // 4 billion iterations
-  volatile double x = 1.0, y = 2.0, z = 3.0;
-  for(unsigned long i = 0; i &lt; N; i++) MAD64(x,y,z);
-  return 0;
-}</code></pre>
-        <small class="caption">(FIXME make basement slide)Code listing from paper: FMA microbenchmark (<code>lst:fma-bench</code>).</small>
-        <aside class="notes">
-          Highlight simple CPU‑bound kernel to measure tracing/sampling overhead and trace size across rates.
-        </aside>
-      </section>
-
-      <section>
-        <h2>Overhead &amp; Trace Size (Results)</h2>
-        <ul>
-          <li>Baseline: <strong>10.363 ± 0.025 s</strong>; THAPI only: <strong>14.123 ± 0.326 s</strong></li>
-          <li>THAPI+CXI: <strong>14.132 ± 0.041 s (1 kHz)</strong>; <strong>14.156 ± 0.335 s (100 Hz)</strong></li>
-          <li>THAPI+CXI: <strong>14.177 ± 0.348 s (10 Hz)</strong>; <strong>14.178 ± 0.320 s (1 Hz)</strong></li>
-          <li>Trace sizes: <strong>174.84 MB</strong>, <strong>34.52 MB</strong>, <strong>13.65 MB</strong>, <strong>11.53 MB</strong> respectively</li>
-        </ul>
-        <small class="caption">(FIXME Make into a table) Runtime and trace size impact for varying CXI sampling rates.</small>
-        <aside class="notes">
-          Emphasize that CXI sampling adds negligible runtime beyond THAPI, and trace size scales with sampling rate.
-        </aside>
-      </section>
-
-      <section>
-        <h2>Point‑to‑Point Ping‑Pong (Method)</h2>
-        <ul>
-          <li><code>fi_pingpong</code> (libfabric CXI), <strong>100k</strong> round trips per pair</li>
-          <li>Two cases: <strong>256 B on cxi0↔cxi1</strong>, <strong>64 B on cxi2↔cxi3</strong></li>
-          <li>Record <strong>ΔTX/ΔRX octets</strong> per port</li>
-        </ul>
-        <pre><code class="language-bash">fi_pingpong -S &lt;size&gt; -I 100000 -e rdm -m tagged -p cxi -d &lt;interface&gt;           # start
-fi_pingpong -S &lt;size&gt; -I 100000 -e rdm -m tagged -p cxi -d &lt;interface&gt; &lt;server&gt;  # connect</code></pre>
-        <aside class="notes">
-          This validates per‑NIC attribution and allows inferring protocol overhead from octet deltas.
-        </aside>
-      </section>
-
-      <section>
-        <h2>Point‑to‑Point (Results)</h2>
-        <ul>
-          <li>Overhead ≈ <strong>181 B/msg</strong> (both 256 B and 64 B cases)</li>
-          <li>Per‑NIC tracks confirm traffic on intended rails</li>
-          <li>Mapping verified; no cross‑talk between ports</li>
-          <li>FIXME should I add Perfetto timeline or table from paper "validating" above?</li>
-        </ul>
-        <small class="caption">Per‑port byte deltas and inferred overhead.</small>
-        <aside class="notes">
-          Stress that rail attribution is correct and overhead is consistent across payload sizes.
-        </aside>
-      </section>
-
-      <section>
         <h2>Congested Collectives Scenario</h2>
         <ul>
           <li>FIXME insert Aurora node architecture slide here.
@@ -467,6 +400,72 @@ iprof --timeline --sample -- ./a.out
         </aside>
       </section>
 
+      <section>
+        <h2>Microbenchmark Setup (Overhead)</h2>
+        <ul>
+          <li>Single node FMA loop, <strong>256×10⁹</strong> operations</li>
+          <li>Compare: baseline, THAPI only, THAPI+CXI at <strong>1 kHz / 100 Hz / 10 Hz / 1 Hz</strong></li>
+          <li><strong>Default 10 Hz</strong> is practical</li>
+          <li>FIXME either two column slide or move listing to basement</li>
+        </ul>
+        <pre><code class="language-c">// fma_bench.c
+#include &lt;math.h&gt;
+#define MAD4(x,y,z)  x=fma(x,y,z);x=fma(x,y,z);x=fma(x,y,z);x=fma(x,y,z)
+#define MAD16(x,y,z) MAD4(x,y,z);MAD4(x,y,z);MAD4(x,y,z);MAD4(x,y,z)
+#define MAD64(x,y,z) MAD16(x,y,z);MAD16(x,y,z);MAD16(x,y,z);MAD16(x,y,z)
+int main(void){
+  const unsigned long N = 4000000000UL; // 4 billion iterations
+  volatile double x = 1.0, y = 2.0, z = 3.0;
+  for(unsigned long i = 0; i &lt; N; i++) MAD64(x,y,z);
+  return 0;
+}</code></pre>
+        <small class="caption">(FIXME make basement slide)Code listing from paper: FMA microbenchmark (<code>lst:fma-bench</code>).</small>
+        <aside class="notes">
+          Highlight simple CPU‑bound kernel to measure tracing/sampling overhead and trace size across rates.
+        </aside>
+      </section>
+
+      <section>
+        <h2>Overhead &amp; Trace Size (Results)</h2>
+        <ul>
+          <li>Baseline: <strong>10.363 ± 0.025 s</strong>; THAPI only: <strong>14.123 ± 0.326 s</strong></li>
+          <li>THAPI+CXI: <strong>14.132 ± 0.041 s (1 kHz)</strong>; <strong>14.156 ± 0.335 s (100 Hz)</strong></li>
+          <li>THAPI+CXI: <strong>14.177 ± 0.348 s (10 Hz)</strong>; <strong>14.178 ± 0.320 s (1 Hz)</strong></li>
+          <li>Trace sizes: <strong>174.84 MB</strong>, <strong>34.52 MB</strong>, <strong>13.65 MB</strong>, <strong>11.53 MB</strong> respectively</li>
+        </ul>
+        <small class="caption">(FIXME Make into a table) Runtime and trace size impact for varying CXI sampling rates.</small>
+        <aside class="notes">
+          Emphasize that CXI sampling adds negligible runtime beyond THAPI, and trace size scales with sampling rate.
+        </aside>
+      </section>
+
+      <section>
+        <h2>Point‑to‑Point Ping‑Pong (Method)</h2>
+        <ul>
+          <li><code>fi_pingpong</code> (libfabric CXI), <strong>100k</strong> round trips per pair</li>
+          <li>Two cases: <strong>256 B on cxi0↔cxi1</strong>, <strong>64 B on cxi2↔cxi3</strong></li>
+          <li>Record <strong>ΔTX/ΔRX octets</strong> per port</li>
+        </ul>
+        <pre><code class="language-bash">fi_pingpong -S &lt;size&gt; -I 100000 -e rdm -m tagged -p cxi -d &lt;interface&gt;           # start
+fi_pingpong -S &lt;size&gt; -I 100000 -e rdm -m tagged -p cxi -d &lt;interface&gt; &lt;server&gt;  # connect</code></pre>
+        <aside class="notes">
+          This validates per‑NIC attribution and allows inferring protocol overhead from octet deltas.
+        </aside>
+      </section>
+
+      <section>
+        <h2>Point‑to‑Point (Results)</h2>
+        <ul>
+          <li>Overhead ≈ <strong>181 B/msg</strong> (both 256 B and 64 B cases)</li>
+          <li>Per‑NIC tracks confirm traffic on intended rails</li>
+          <li>Mapping verified; no cross‑talk between ports</li>
+          <li>FIXME should I add Perfetto timeline or table from paper "validating" above?</li>
+        </ul>
+        <small class="caption">Per‑port byte deltas and inferred overhead.</small>
+        <aside class="notes">
+          Stress that rail attribution is correct and overhead is consistent across payload sizes.
+        </aside>
+      </section>
 
     </div>
   </div>
