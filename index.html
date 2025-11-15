@@ -142,6 +142,18 @@
       <!-- ──────────────────────────────── -->
       <!-- Visualization / UX               -->
       <!-- ──────────────────────────────── -->
+      <section id="perfetto-demo" data-perfetto-trace="assets/traces/cxi-demo.pftrace">
+        <h2>Interactive Perfetto timeline (demo)</h2>
+        <p>
+          When this slide appears, a new tab with <code>ui.perfetto.dev</code>
+          will open and automatically load the bundled trace.
+        </p>
+        <p class="sm" id="perfetto-status"></p>
+        <aside class="notes">
+          Demo: show the actual Perfetto UI with the CXI demo trace pre‑loaded.
+        </aside>
+      </section>
+
       <section>
         <h2>Time-aligned timeline in Perfetto</h2>
         <ul>
@@ -487,6 +499,57 @@ fi_pingpong -S &lt;size&gt; -I 100000 -e rdm -m tagged -p cxi -d &lt;interface&g
   <script src="https://unpkg.com/reveal.js@4/plugin/zoom/zoom.js"></script>
 
   <script>
+    const PERFETTO_ORIGIN = 'https://ui.perfetto.dev';
+  
+    async function fetchTrace(path) {
+      const resp = await fetch(path);
+      if (!resp.ok) {
+        throw new Error('Failed to fetch trace: ' + resp.status + ' ' + resp.statusText);
+      }
+      return await resp.arrayBuffer();
+    }
+  
+    function openInPerfetto(arrayBuffer, options = {}) {
+      const statusEl = document.getElementById('perfetto-status');
+  
+      const win = window.open(PERFETTO_ORIGIN);
+      if (!win) {
+        if (statusEl) {
+          statusEl.textContent = 'Popup blocked – allow popups for this site and try again.';
+        }
+        return;
+      }
+  
+      const timer = setInterval(() => {
+        win.postMessage('PING', PERFETTO_ORIGIN);
+      }, 50);
+  
+      function onMessage(evt) {
+        if (evt.source !== win || evt.origin !== PERFETTO_ORIGIN || evt.data !== 'PONG') {
+          return;
+        }
+  
+        clearInterval(timer);
+        window.removeEventListener('message', onMessage);
+  
+        win.postMessage({
+          perfetto: {
+            buffer: arrayBuffer,
+            title: options.title || 'Perfetto trace',
+            fileName: options.fileName || 'trace.pftrace'
+            // You can add `url` / `appStateHash` here if you want shareable links.
+          }
+        }, PERFETTO_ORIGIN);
+  
+        if (statusEl) {
+          statusEl.textContent = 'Trace sent to Perfetto.';
+        }
+      }
+  
+      window.addEventListener('message', onMessage);
+    }
+  
+    // Initialize Reveal first
     Reveal.initialize({
       hash: true,
       progress: true,
@@ -495,7 +558,51 @@ fi_pingpong -S &lt;size&gt; -I 100000 -e rdm -m tagged -p cxi -d &lt;interface&g
       transition: 'fade',
       plugins: [ RevealNotes, RevealHighlight, RevealSearch, RevealZoom ]
     });
+  
+    // When slides change, check if we’re on the Perfetto demo slide
+    Reveal.on('slidechanged', event => {
+      const slide = event.currentSlide;
+      if (!slide) return;
+  
+      const tracePath = slide.dataset && slide.dataset.perfettoTrace;
+      if (!tracePath) return;
+  
+      // Only do this once per load
+      if (slide._perfettoLoaded) return;
+      slide._perfettoLoaded = true;
+  
+      const statusEl = document.getElementById('perfetto-status');
+  
+      if (location.protocol === 'file:') {
+        if (statusEl) {
+          statusEl.textContent =
+            'Perfetto demo requires http(s). Run `python3 -m http.server` in the repo root, ' +
+            'then open http://localhost:8000/.';
+        }
+        return;
+      }
+  
+      if (statusEl) {
+        statusEl.textContent = 'Fetching trace…';
+      }
+  
+      fetchTrace(tracePath)
+        .then(buffer => {
+          if (statusEl) statusEl.textContent = 'Opening Perfetto UI…';
+          openInPerfetto(buffer, {
+            title: 'THAPI CXI demo trace',
+            fileName: 'cxi-demo.pftrace'
+          });
+        })
+        .catch(err => {
+          console.error(err);
+          if (statusEl) {
+            statusEl.textContent = 'Error loading trace: ' + err.message;
+          }
+        });
+    });
   </script>
+
 
 <!--
   To keep the slides manageable here, Reveal.js and plugins are loaded from CDN (no other network deps). For a fully self-contained single-file deck:
