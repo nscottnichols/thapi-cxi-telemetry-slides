@@ -46,6 +46,15 @@
       border: none;
     }
 
+    #perfetto-iframe-slide h2 a {
+      text-decoration: none;
+    }
+    
+    #perfetto-iframe-slide h2 a span[aria-hidden="true"] {
+      font-size: 0.8em;
+      margin-left: 0.25em;
+    }
+
   </style>
 </head>
 <body>
@@ -156,7 +165,13 @@
       <!-- ──────────────────────────────── -->
       <section id="perfetto-iframe-slide"
                data-perfetto-trace="assets/traces/cxi-demo.pftrace">
-        <h2>Interactive Perfetto timeline (embedded)</h2>
+        <h2>
+          <a href="#" id="perfetto-popout-link" title="Open in Perfetto (new tab)">
+            Interactive Perfetto timeline
+            <!-- A simple unicode pop-out icon -->
+            <span aria-hidden="true">↗</span>
+          </a>
+        </h2>
       
         <div class="iframe-wrapper">
           <iframe
@@ -171,10 +186,11 @@
         <p class="caption" id="perfetto-status"></p>
       
         <aside class="notes">
-          When this slide appears, the embedded Perfetto UI should show the CXI
-          demo trace automatically (loaded from <code>assets/traces/</code>).
+          Embedded Perfetto shows the trace on this slide.
+          Click the title to pop it out into a full tab.
         </aside>
       </section>
+
 
       <section>
         <h2>Time-aligned timeline in Perfetto</h2>
@@ -522,6 +538,8 @@ fi_pingpong -S &lt;size&gt; -I 100000 -e rdm -m tagged -p cxi -d &lt;interface&g
 
   <script>
     const PERFETTO_ORIGIN = 'https://ui.perfetto.dev';
+    let perfettoTraceBuffer = null;   // shared between iframe + pop-out
+    let perfettoTracePath = null;
   
     async function fetchTrace(path) {
       const resp = await fetch(path);
@@ -542,20 +560,16 @@ fi_pingpong -S &lt;size&gt; -I 100000 -e rdm -m tagged -p cxi -d &lt;interface&g
   
       const targetWindow = iframe.contentWindow;
   
-      // Keep pinging until Perfetto replies with PONG (their recommended handshake).
-      // https://perfetto.dev/docs/visualization/deep-linking-to-perfetto-ui
       const timer = setInterval(() => {
         try {
           targetWindow.postMessage('PING', PERFETTO_ORIGIN);
         } catch (e) {
-          // Ignore transient errors when iframe is still loading
+          // iframe may still be loading; ignore
         }
       }, 50);
   
       function onMessage(evt) {
-        if (evt.source !== targetWindow || evt.origin !== PERFETTO_ORIGIN) {
-          return;
-        }
+        if (evt.source !== targetWindow || evt.origin !== PERFETTO_ORIGIN) return;
         if (evt.data !== 'PONG') return;
   
         clearInterval(timer);
@@ -566,9 +580,6 @@ fi_pingpong -S &lt;size&gt; -I 100000 -e rdm -m tagged -p cxi -d &lt;interface&g
             buffer: arrayBuffer,
             title: options.title || 'Perfetto trace',
             fileName: options.fileName || 'trace.pftrace',
-            // Optional: url / appStateHash if you want deep links
-            // url: options.url,
-            // appStateHash: options.appStateHash,
           },
         }, PERFETTO_ORIGIN);
   
@@ -580,7 +591,104 @@ fi_pingpong -S &lt;size&gt; -I 100000 -e rdm -m tagged -p cxi -d &lt;interface&g
       window.addEventListener('message', onMessage);
     }
   
-    // Initialize Reveal as before.
+    function openPerfettoInNewTab(arrayBuffer, options = {}) {
+      const statusEl = document.getElementById('perfetto-status');
+  
+      if (location.protocol === 'file:') {
+        if (statusEl) {
+          statusEl.textContent =
+            'Opening Perfetto in a new tab requires http(s). ' +
+            'Run `python3 -m http.server` and open http://localhost:8000/.';
+        }
+        return;
+      }
+  
+      const win = window.open(PERFETTO_ORIGIN);
+      if (!win) {
+        if (statusEl) {
+          statusEl.textContent =
+            'Popup blocked – allow popups for this site and click again.';
+        }
+        return;
+      }
+  
+      const timer = setInterval(() => {
+        try {
+          win.postMessage('PING', PERFETTO_ORIGIN);
+        } catch (e) {
+          // ignore until window is ready
+        }
+      }, 50);
+  
+      function onMessage(evt) {
+        if (evt.source !== win || evt.origin !== PERFETTO_ORIGIN) return;
+        if (evt.data !== 'PONG') return;
+  
+        clearInterval(timer);
+        window.removeEventListener('message', onMessage);
+  
+        win.postMessage({
+          perfetto: {
+            buffer: arrayBuffer,
+            title: options.title || 'Perfetto trace',
+            fileName: options.fileName || 'trace.pftrace',
+          },
+        }, PERFETTO_ORIGIN);
+  
+        if (statusEl) {
+          statusEl.textContent = 'Trace opened in new Perfetto tab.';
+        }
+      }
+  
+      window.addEventListener('message', onMessage);
+    }
+  
+    function setupPerfettoPopoutLink() {
+      const link = document.getElementById('perfetto-popout-link');
+      if (!link) return;
+  
+      const slide = link.closest('section');
+      if (slide && slide.dataset && slide.dataset.perfettoTrace) {
+        perfettoTracePath = slide.dataset.perfettoTrace;
+      }
+  
+      link.addEventListener('click', (evt) => {
+        evt.preventDefault();
+        const statusEl = document.getElementById('perfetto-status');
+  
+        if (!perfettoTraceBuffer && !perfettoTracePath) {
+          if (statusEl) statusEl.textContent = 'No trace configured for this slide.';
+          return;
+        }
+  
+        const ensureBuffer = perfettoTraceBuffer
+          ? Promise.resolve(perfettoTraceBuffer)
+          : fetchTrace(perfettoTracePath).then(buffer => {
+              perfettoTraceBuffer = buffer;
+              return buffer;
+            });
+  
+        if (statusEl) {
+          statusEl.textContent = 'Preparing trace for new tab…';
+        }
+  
+        ensureBuffer
+          .then(buffer => {
+            openPerfettoInNewTab(buffer, {
+              title: 'THAPI CXI demo trace',
+              fileName: 'cxi-demo.pftrace',
+            });
+          })
+          .catch(err => {
+            console.error(err);
+            if (statusEl) {
+              statusEl.textContent = 'Error loading trace: ' + err.message;
+            }
+          });
+      });
+    }
+  
+    // Initialize Reveal
     Reveal.initialize({
       hash: true,
       progress: true,
@@ -590,7 +698,10 @@ fi_pingpong -S &lt;size&gt; -I 100000 -e rdm -m tagged -p cxi -d &lt;interface&g
       plugins: [ RevealNotes, RevealHighlight, RevealSearch, RevealZoom ]
     });
   
-    // When we land on a slide with data-perfetto-trace, load + send once.
+    // Wire up the pop-out link
+    setupPerfettoPopoutLink();
+  
+    // Auto-load trace into iframe when we land on the slide
     Reveal.on('slidechanged', event => {
       const slide = event.currentSlide;
       if (!slide) return;
@@ -598,7 +709,8 @@ fi_pingpong -S &lt;size&gt; -I 100000 -e rdm -m tagged -p cxi -d &lt;interface&g
       const tracePath = slide.dataset && slide.dataset.perfettoTrace;
       if (!tracePath) return;
   
-      // Avoid re-sending if the audience navigates back to this slide.
+      perfettoTracePath = tracePath; // keep it for pop-out
+  
       if (slide._perfettoLoaded) return;
       slide._perfettoLoaded = true;
   
@@ -608,7 +720,7 @@ fi_pingpong -S &lt;size&gt; -I 100000 -e rdm -m tagged -p cxi -d &lt;interface&g
         if (statusEl) {
           statusEl.textContent =
             'Embedded Perfetto requires http(s). ' +
-            'Run `python3 -m http.server` in the repo root and open http://localhost:8000/.';
+            'Run `python3 -m http.server` and open http://localhost:8000/.';
         }
         return;
       }
@@ -619,6 +731,7 @@ fi_pingpong -S &lt;size&gt; -I 100000 -e rdm -m tagged -p cxi -d &lt;interface&g
   
       fetchTrace(tracePath)
         .then(buffer => {
+          perfettoTraceBuffer = buffer; // cache for pop-out
           if (statusEl) statusEl.textContent = 'Sending trace to Perfetto iframe…';
           sendTraceToPerfettoIframe(buffer, {
             title: 'THAPI CXI demo trace',
@@ -633,8 +746,6 @@ fi_pingpong -S &lt;size&gt; -I 100000 -e rdm -m tagged -p cxi -d &lt;interface&g
         });
     });
   </script>
-
-
 
 <!--
   To keep the slides manageable here, Reveal.js and plugins are loaded from CDN (no other network deps). For a fully self-contained single-file deck:
