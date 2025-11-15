@@ -34,6 +34,18 @@
     .tight li { margin: 0.18em 0; }
     /* Footer/progress alignment like prior deck */
     .reveal .progress { height: 4px; }
+
+    .iframe-wrapper {
+      width: 100%;
+      height: 70vh;
+    }
+    
+    #perfetto-frame {
+      width: 100%;
+      height: 100%;
+      border: none;
+    }
+
   </style>
 </head>
 <body>
@@ -142,15 +154,25 @@
       <!-- ──────────────────────────────── -->
       <!-- Visualization / UX               -->
       <!-- ──────────────────────────────── -->
-      <section id="perfetto-demo" data-perfetto-trace="assets/traces/cxi-demo.pftrace">
-        <h2>Interactive Perfetto timeline (demo)</h2>
-        <p>
-          When this slide appears, a new tab with <code>ui.perfetto.dev</code>
-          will open and automatically load the bundled trace.
-        </p>
-        <p class="sm" id="perfetto-status"></p>
+      <section id="perfetto-iframe-slide"
+               data-perfetto-trace="assets/traces/cxi-demo.pftrace">
+        <h2>Interactive Perfetto timeline (embedded)</h2>
+      
+        <div class="iframe-wrapper">
+          <iframe
+            id="perfetto-frame"
+            src="https://ui.perfetto.dev/#!/viewer?mode=embedded&hideSidebar=true"
+            loading="lazy"
+            referrerpolicy="no-referrer"
+            allowfullscreen
+          ></iframe>
+        </div>
+      
+        <p class="caption" id="perfetto-status"></p>
+      
         <aside class="notes">
-          Demo: show the actual Perfetto UI with the CXI demo trace pre‑loaded.
+          When this slide appears, the embedded Perfetto UI should show the CXI
+          demo trace automatically (loaded from <code>assets/traces/</code>).
         </aside>
       </section>
 
@@ -509,47 +531,56 @@ fi_pingpong -S &lt;size&gt; -I 100000 -e rdm -m tagged -p cxi -d &lt;interface&g
       return await resp.arrayBuffer();
     }
   
-    function openInPerfetto(arrayBuffer, options = {}) {
+    function sendTraceToPerfettoIframe(arrayBuffer, options = {}) {
+      const iframe = document.getElementById('perfetto-frame');
       const statusEl = document.getElementById('perfetto-status');
   
-      const win = window.open(PERFETTO_ORIGIN);
-      if (!win) {
-        if (statusEl) {
-          statusEl.textContent = 'Popup blocked – allow popups for this site and try again.';
-        }
+      if (!iframe || !iframe.contentWindow) {
+        if (statusEl) statusEl.textContent = 'Perfetto iframe not ready.';
         return;
       }
   
+      const targetWindow = iframe.contentWindow;
+  
+      // Keep pinging until Perfetto replies with PONG (their recommended handshake).
+      // https://perfetto.dev/docs/visualization/deep-linking-to-perfetto-ui
       const timer = setInterval(() => {
-        win.postMessage('PING', PERFETTO_ORIGIN);
+        try {
+          targetWindow.postMessage('PING', PERFETTO_ORIGIN);
+        } catch (e) {
+          // Ignore transient errors when iframe is still loading
+        }
       }, 50);
   
       function onMessage(evt) {
-        if (evt.source !== win || evt.origin !== PERFETTO_ORIGIN || evt.data !== 'PONG') {
+        if (evt.source !== targetWindow || evt.origin !== PERFETTO_ORIGIN) {
           return;
         }
+        if (evt.data !== 'PONG') return;
   
         clearInterval(timer);
         window.removeEventListener('message', onMessage);
   
-        win.postMessage({
+        targetWindow.postMessage({
           perfetto: {
             buffer: arrayBuffer,
             title: options.title || 'Perfetto trace',
-            fileName: options.fileName || 'trace.pftrace'
-            // You can add `url` / `appStateHash` here if you want shareable links.
-          }
+            fileName: options.fileName || 'trace.pftrace',
+            // Optional: url / appStateHash if you want deep links
+            // url: options.url,
+            // appStateHash: options.appStateHash,
+          },
         }, PERFETTO_ORIGIN);
   
         if (statusEl) {
-          statusEl.textContent = 'Trace sent to Perfetto.';
+          statusEl.textContent = 'Trace loaded in embedded Perfetto.';
         }
       }
   
       window.addEventListener('message', onMessage);
     }
   
-    // Initialize Reveal first
+    // Initialize Reveal as before.
     Reveal.initialize({
       hash: true,
       progress: true,
@@ -559,7 +590,7 @@ fi_pingpong -S &lt;size&gt; -I 100000 -e rdm -m tagged -p cxi -d &lt;interface&g
       plugins: [ RevealNotes, RevealHighlight, RevealSearch, RevealZoom ]
     });
   
-    // When slides change, check if we’re on the Perfetto demo slide
+    // When we land on a slide with data-perfetto-trace, load + send once.
     Reveal.on('slidechanged', event => {
       const slide = event.currentSlide;
       if (!slide) return;
@@ -567,7 +598,7 @@ fi_pingpong -S &lt;size&gt; -I 100000 -e rdm -m tagged -p cxi -d &lt;interface&g
       const tracePath = slide.dataset && slide.dataset.perfettoTrace;
       if (!tracePath) return;
   
-      // Only do this once per load
+      // Avoid re-sending if the audience navigates back to this slide.
       if (slide._perfettoLoaded) return;
       slide._perfettoLoaded = true;
   
@@ -576,22 +607,22 @@ fi_pingpong -S &lt;size&gt; -I 100000 -e rdm -m tagged -p cxi -d &lt;interface&g
       if (location.protocol === 'file:') {
         if (statusEl) {
           statusEl.textContent =
-            'Perfetto demo requires http(s). Run `python3 -m http.server` in the repo root, ' +
-            'then open http://localhost:8000/.';
+            'Embedded Perfetto requires http(s). ' +
+            'Run `python3 -m http.server` in the repo root and open http://localhost:8000/.';
         }
         return;
       }
   
       if (statusEl) {
-        statusEl.textContent = 'Fetching trace…';
+        statusEl.textContent = 'Fetching trace from ' + tracePath + ' …';
       }
   
       fetchTrace(tracePath)
         .then(buffer => {
-          if (statusEl) statusEl.textContent = 'Opening Perfetto UI…';
-          openInPerfetto(buffer, {
+          if (statusEl) statusEl.textContent = 'Sending trace to Perfetto iframe…';
+          sendTraceToPerfettoIframe(buffer, {
             title: 'THAPI CXI demo trace',
-            fileName: 'cxi-demo.pftrace'
+            fileName: 'cxi-demo.pftrace',
           });
         })
         .catch(err => {
@@ -602,6 +633,7 @@ fi_pingpong -S &lt;size&gt; -I 100000 -e rdm -m tagged -p cxi -d &lt;interface&g
         });
     });
   </script>
+
 
 
 <!--
