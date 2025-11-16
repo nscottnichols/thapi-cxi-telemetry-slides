@@ -280,31 +280,31 @@
         </aside>
       </section>
 
-      <section>
-        <h2>Congested Collectives Scenario</h2>
-        <div class="two-col">
-          <div>
-            <img
-              class="fit"
-              src="assets/images/ECB-simplified.svg"
-              alt="Simplified Aurora node architecture"
-            >
-            <small class="caption">
-              Aurora node architecture (simplified).
-            </small>
-          </div>
-          <div>
-            <ul>
-              <li>Up to <strong>12</strong> concurrent jobs; <strong>16 ranks/job</strong> across <strong>2 nodes</strong></li>
-              <li>Message size <strong>512 MiB</strong> per rank; trace <strong>one</strong> job/batch</li>
-              <li>Track bytes, posted/non-posted pushback, stall/timeout events</li>
-            </ul>
-          </div>
+      <section id="perfetto-iframe-slide"
+               data-perfetto-trace="assets/traces/cxi-demo.pftrace">
+        <h2>
+          <a id="perfetto-popout-link" role="button" tabindex="0">
+            Interactive Perfetto timeline
+            <!-- A simple unicode pop-out icon -->
+            <span aria-hidden="true">↗</span>
+          </a>
+        </h2>
+      
+        <div class="iframe-wrapper">
+          <iframe
+            id="perfetto-frame"
+            src="https://ui.perfetto.dev/#!/viewer?mode=embedded&hideSidebar=true"
+            loading="lazy"
+            referrerpolicy="no-referrer"
+            allowfullscreen
+          ></iframe>
         </div>
+      
+        <p class="caption" id="perfetto-status"></p>
+      
         <aside class="notes">
-          Walk through the Aurora node diagram (cores, memory, NIC, where CXI counters live),
-          then connect it directly to this congestion setup used to stress the network while
-          tracing one job for clarity.
+          Embedded Perfetto shows the trace on this slide.
+          Click the title to pop it out into a full tab.
         </aside>
       </section>
 
