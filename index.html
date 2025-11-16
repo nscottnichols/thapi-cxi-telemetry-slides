@@ -64,6 +64,12 @@
       opacity: 0.95;
     }
 
+    .reveal section img.qr-code {
+      width: 10rem;
+      max-width: none;
+      height: auto;
+    }
+
   </style>
 </head>
 <body>
@@ -480,9 +486,9 @@ LTTNG_UST_CXI_COUNTERS_FILE=foo.txt</code></li>
         <div class="two-col" style="margin-top: 1.5rem;">
           <div style="text-align: center;">
             <img
+              class="qr-code"
               src="assets/images/qr-thapi-repo.svg"
               alt="QR code for THAPI GitHub repository"
-              style="max-width: 100%; height: auto;"
             >
             <p class="caption">
               <a href="https://github.com/argonne-lcf/THAPI"
@@ -494,9 +500,9 @@ LTTNG_UST_CXI_COUNTERS_FILE=foo.txt</code></li>
       
           <div style="text-align: center;">
             <img
+              class="qr-code"
               src="assets/images/qr-thapi-paper.svg"
               alt="QR code for THAPI paper on arXiv"
-              style="max-width: 100%; height: auto;"
             >
             <p class="caption">
               <a href="https://arxiv.org/abs/2504.03683"
