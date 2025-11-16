@@ -515,64 +515,73 @@ LTTNG_UST_CXI_COUNTERS_FILE=foo.txt</code></li>
       </section>
 
       <!-- (Optional) Backup slide -->
+      <!-- Backup cheat sheet: Env vars + Base paths (basement) -->
       <section>
-        <h2>Backup — Env‑Vars &amp; Paths Cheat Sheet</h2>
-        <div class="two-col">
+
+        <!-- MAIN SLIDE: environment variables -->
+        <section>
+          <h2>Backup — Env-Vars Cheat Sheet</h2>
+
           <ul class="tight">
-            <li><code>LTTNG_UST_CXI_SAMPLING_CXI</code></li>
-            <li><code>..._CXI_COUNTERS_FILE</code></li>
-            <li><code>..._CXI_PERIOD_MS</code></li>
-            <li><code>..._CXI_BASE</code></li>
-            <li><code>..._CXI_RH_BASE</code></li>
-          </ul>
-          <ul class="tight">
-            <li>FIXME this slide is too hard to read</li>
-            <li>Defaults: <code>/sys/class/cxi</code>, <code>/run/cxi</code></li>
-            <li>Counters file: one per line; <code>rh:</code> for retry‑handler</li>
-            <li>Paths:
-              <div class="sm"><code>$CXI_BASE/&lt;iface&gt;/device/telemetry/&lt;counter&gt;</code></div>
-              <div class="sm"><code>$CXI_RH_BASE/&lt;iface&gt;/&lt;counter&gt;</code></div>
+            <li>
+              <code>LTTNG_UST_CXI_SAMPLING_CXI</code><br>
+              <span class="sm">
+                Master enable (set <code>0</code> to disable sampling)
+              </span>
+            </li>
+            <li>
+              <code>LTTNG_UST_CXI_SAMPLING_CXI_COUNTERS_FILE</code><br>
+              <span class="sm">
+                Text file with one counter per line
+                (<code>rh:</code> prefix for retry-handler counters)
+              </span>
+            </li>
+            <li>
+              <code>LTTNG_UST_CXI_SAMPLING_CXI_PERIOD_MS</code><br>
+              <span class="sm">
+                Sampling period in milliseconds
+              </span>
             </li>
           </ul>
-        </div>
-        <aside class="notes">
-          One-screen crib for users: env knobs, defaults, and where to expect counters.
-        </aside>
-      </section>
 
-      <section>
-        <h2>Environment Variables (User Knobs)</h2>
-        <div class="two-col">
+          <aside class="notes">
+            One-screen crib for the main user knobs: exact env var names, what they do,
+            and how users select counters + sampling period.
+          </aside>
+        </section>
+
+        <!-- BASEMENT SLIDE: base paths -->
+        <section>
+          <h2>Backup — Base Paths Cheat Sheet</h2>
+
           <ul class="tight">
-            <li><code>LTTNG_UST_CXI_SAMPLING_CXI</code> — master enable (set <code>0</code> to disable)</li>
-            <li><code>LTTNG_UST_CXI_SAMPLING_CXI_COUNTERS_FILE</code> — counters list (<code>rh:</code> prefix for retry‑handler)</li>
-            <li><code>LTTNG_UST_CXI_SAMPLING_CXI_PERIOD_MS</code> — sampling period (ms)</li>
+            <li>
+              <code>LTTNG_UST_CXI_SAMPLING_CXI_BASE</code><br>
+              <span class="sm">
+                Default: <code>/sys/class/cxi</code>
+              </span>
+            </li>
+            <li>
+              <code>LTTNG_UST_CXI_SAMPLING_CXI_RH_BASE</code><br>
+              <span class="sm">
+                Default: <code>/run/cxi</code>
+              </span>
+            </li>
+            <li>
+              <span class="sm">Counter paths used:</span>
+              <div class="sm">
+                <code>$CXI_BASE/&lt;iface&gt;/device/telemetry/&lt;counter&gt;</code><br>
+                <code>$CXI_RH_BASE/&lt;iface&gt;/&lt;counter&gt;</code>
+              </div>
+            </li>
           </ul>
-          <div class="placeholder">
-            <strong>Placeholder for Table:</strong> FIXME, make this a table.
-          </div>
-        </div>
-        <aside class="notes">
-          Present exact variable names and their semantics; period in milliseconds, counters selectable via file.
-        </aside>
-      </section>
 
-      <section>
-        <h2>Base Paths</h2>
-        <ul>
-          <li><code>LTTNG_UST_CXI_SAMPLING_CXI_BASE</code> → default <code>/sys/class/cxi</code></li>
-          <li><code>LTTNG_UST_CXI_SAMPLING_CXI_RH_BASE</code> → default <code>/run/cxi</code></li>
-          <li>Paths used:
-            <div class="sm">
-              <code>$CXI_BASE/&lt;iface&gt;/device/telemetry/&lt;counter&gt;</code> and
-              <code>$CXI_RH_BASE/&lt;iface&gt;/&lt;counter&gt;</code>
-            </div>
-          </li>
-          <li>FIXME how can I make this more readable?</li>
-        </ul>
-        <aside class="notes">
-          Show where counters live; users can override to match site mounts or simulated trees.
-        </aside>
+          <aside class="notes">
+            Show where counters live in the filesystem: defaults for CXI_BASE / CXI_RH_BASE,
+            and the exact paths users should expect. This is backup detail; reach it via ↓.
+          </aside>
+        </section>
+
       </section>
 
       <section>
