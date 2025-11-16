@@ -308,20 +308,41 @@
         </aside>
       </section>
 
+      <!-- Congested Collectives Findings: main + basement -->
       <section>
-        <h2>Congested Collectives Findings</h2>
-        <ul>
-          <li><strong>Posted pushback ratio</strong> rises with concurrency; <strong>non‑posted</strong> near zero</li>
-          <li><strong>RX packet‑buffer stall cycles</strong> escalate; Allreduce latency grows (~<strong>1.16 s → 1.43 s</strong>)</li>
-          <li>Root cause: <strong>receive‑side back‑pressure</strong>, not wire‑rate saturation</li>
-        </ul>
-        <div class="placeholder">
-          <strong>Placeholder for Figure:</strong> FIXME add <code>metric_plot.svg/png</code> (whatever works).
-          <div class="sm caption">Summary metrics vs. concurrent <code>Allreduce</code> processes.</div>
-        </div>
-        <aside class="notes">
-          Walk through the four‑panel summary: posted vs non‑posted pushback, RX stall cycles, and latency trend.
-        </aside>
+        <!-- MAIN SLIDE: mostly just the plot -->
+        <section>
+          <h2>Congested Collectives Findings</h2>
+          <img
+            class="fit"
+            src="assets/images/metric_plot_two-column.svg"
+            alt="Congested collectives performance plot"
+          >
+          <small class="caption">
+            Congested collectives behavior under varying job counts.
+          </small>
+          <aside class="notes">
+            Hit the down arrow for the detailed findings basement slide.
+          </aside>
+        </section>
+
+        <!-- BASEMENT SLIDE: all the text/details -->
+        <section>
+          <h2>Congested Collectives Findings &mdash; details</h2>
+          <ul>
+            <!-- Move your existing findings bullets/text here -->
+            <li>Inbound traffic engine stall counters grow sharply beyond 6 concurrent jobs</li>
+            <li>Pushback events correlate with large-message allreduce phases and stall metrics</li>
+            <li><strong>Posted pushback ratio</strong> rises with concurrency; <strong>non‑posted</strong> near zero</li>
+            <!-- <li><strong>RX packet‑buffer stall cycles</strong> escalate; Allreduce latency grows (~<strong>1.16 s → 1.43 s</strong>)</li> -->
+            <li>Root cause: <strong>receive‑side back‑pressure</strong>, not wire‑rate saturation</li>
+          </ul>
+          <aside class="notes">
+            This is where you put the full explanation: tie the trends in the plot to
+            CXI counters, job placement, and message size, and highlight the main
+            takeaway you want the audience to remember.
+          </aside>
+        </section>
       </section>
 
       <!-- ──────────────────────────────── -->
