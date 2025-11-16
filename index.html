@@ -55,24 +55,59 @@
       margin-left: 0.25em;
     }
 
+    .reveal section .argonne-logo {
+      position: absolute;
+      right: 1.5rem;
+      bottom: 1.5rem;
+      max-width: 18%;
+      height: auto;
+      opacity: 0.95;
+    }
+
   </style>
 </head>
 <body>
   <div class="reveal">
     <div class="slides">
 
+      </section>
       <!-- ──────────────────────────────── -->
       <!-- Title                            -->
       <!-- ──────────────────────────────── -->
-      <!-- FIXME add Argonne logo -->
-      <!-- FIXME add links to Orchid? -->
-      <!-- FIXME add links to Paper? -->
       <section>
         <h1>Extending THAPI with CXI Hardware Counter Sampling</h1>
-        <h3>High‑resolution NIC telemetry inside time‑aligned traces</h3>
-        <p><strong>Nathan S. Nichols</strong>, <strong>Thomas Applencourt</strong></p>
-        <p class="caption">HPE Slingshot‑11 (Cassini) CXI · THAPI → LTTng‑UST → Perfetto</p>
-        <aside class="notes">Open with the pain: collective-heavy AI-for-science hits fabric issues that app profilers miss. We bring NIC ground truth into the same timeline.</aside>
+        <h3>High-resolution NIC telemetry inside time-aligned traces</h3>
+
+        <p>
+          <strong>
+            <a href="https://orcid.org/0000-0000-0000-0000"
+               target="_blank" rel="noopener noreferrer">
+              Nathan S. Nichols
+            </a>
+          </strong>,
+          <strong>
+            <a href="https://orcid.org/0000-0000-0000-0000"
+               target="_blank" rel="noopener noreferrer">
+              Thomas Applencourt
+            </a>
+          </strong>
+        </p>
+
+        <p><em>Argonne National Laboratory</em></p>
+
+        <p class="caption">
+          HPE Slingshot-11 (Cassini) CXI · THAPI → LTTng-UST → Perfetto
+        </p>
+
+        <img
+          class="argonne-logo"
+          src="assets/images/Argonne_logo.svg"
+          alt="Argonne National Laboratory logo"
+        >
+
+        <aside class="notes">
+          Open with the pain: collective-heavy AI-for-science hits fabric issues that app profilers miss. We bring NIC ground truth into the same timeline.
+        </aside>
       </section>
 
       <!-- ──────────────────────────────── -->
