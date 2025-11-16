@@ -306,7 +306,7 @@ LTTNG_UST_CXI_COUNTERS_FILE=foo.txt</code></li>
       <!-- ──────────────────────────────── -->
 
       <section>
-        <h2>Congested Collectives Scenario</h2>
+        <h2>Congested Collectives</h2>
         <div class="two-col">
           <div>
             <img
@@ -335,7 +335,7 @@ LTTNG_UST_CXI_COUNTERS_FILE=foo.txt</code></li>
                data-perfetto-trace="assets/traces/cxi-demo.pftrace">
         <h2>
           <a id="perfetto-popout-link" role="button" tabindex="0">
-            Interactive Perfetto timeline
+            Congested Collectives timeline
             <!-- A simple unicode pop-out icon -->
             <span aria-hidden="true">↗</span>
           </a>
@@ -407,9 +407,6 @@ LTTNG_UST_CXI_COUNTERS_FILE=foo.txt</code></li>
           <li><strong>Receive‑side back‑pressure</strong> and phase‑aligned bursts</li>
           <li>Per‑NIC timelines aligned with MPI/compute context</li>
         </ul>
-        <div class="placeholder">
-          <strong>Placeholder:</strong> FIXME create an annotated Perfetto timeline crop showing all this stuff.
-        </div>
         <aside class="notes">
           Summarize new diagnostic leverage from adding time‑aligned NIC signals to traces.
         </aside>
@@ -420,7 +417,7 @@ LTTNG_UST_CXI_COUNTERS_FILE=foo.txt</code></li>
         <ul>
           <li>Curate a <strong>small</strong> counter set; more ≠ better</li>
           <li>Prefer <strong>rates/ratios</strong> over raw counts</li>
-          <li><strong>Emit‑on‑change</strong> keeps traces readable</li>
+          <li>Tune sampling rate to fit needs</li>
         </ul>
         <aside class="notes">
           Provide pragmatic guidance to keep timelines interpretable and storage reasonable.
@@ -430,10 +427,10 @@ LTTNG_UST_CXI_COUNTERS_FILE=foo.txt</code></li>
       <section>
         <h2>Some Limitations</h2>
         <ul>
-          <li>FIXME should I remove this slide?</li>
           <li><strong>Vendor‑specific</strong> today (Cassini/CXI)</li>
           <li><strong>Sampling</strong> granularity; very short events may alias (raise Hz)</li>
-          <li>Interface‑level attribution; trace volume grows with rate/scale</li>
+          <li>Interface‑level attribution</li>
+          <li>trace volume grows with rate/scale</li>
         </ul>
         <aside class="notes">
           Be precise about current scope and known trade‑offs; sampling trade‑offs are inherent.
@@ -443,9 +440,9 @@ LTTNG_UST_CXI_COUNTERS_FILE=foo.txt</code></li>
       <section>
         <h2>Future Work</h2>
         <ul>
-          <li>Enable <strong>derived metrics</strong> (bytes/s, packets/s), light analytics?</li>
           <li><strong>Adaptive sampling</strong> / budgeted selection</li>
-          <li>Other NICs</li>
+          <li><strong>libfabric</strong> tracing</li>
+          <li>Other NICs (Infiniband, RoCEv2, etc.)</li>
         </ul>
         <aside class="notes">
           Outline near‑term extensions to improve signal quality and analysis ergonomics.
