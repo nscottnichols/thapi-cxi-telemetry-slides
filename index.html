@@ -256,27 +256,28 @@
       <!-- ──────────────────────────────── -->
 
       <section>
-        <h2>Aurora Node Architecture</h2>
-        <img class="fit"
-             src="assets/images/ECB-simplified.svg"
-             alt="Aurora node architecture">
-        <aside class="notes">
-          Walk through this diagram briefly:
-          cores/chiplets, HBM, NIC, and where CXI counters are observed.
-          This sets up the congestion scenario on the next slide.
-        </aside>
-      </section>
-
-      <section>
         <h2>Congested Collectives Scenario</h2>
-        <ul>
-          <li>FIXME insert Aurora node architecture slide here.
-          <li>Up to <strong>12</strong> concurrent jobs; <strong>16 ranks/job</strong> across <strong>2 nodes</strong></li>
-          <li>Message size <strong>512 MiB</strong> per rank; trace <strong>one</strong> job/batch</li>
-          <li>Track bytes, posted/non‑posted pushback, stall/timeout events</li>
-        </ul>
+        <div class="two-col">
+          <div>
+            <img
+              class="fit"
+              src="assets/images/ECB-simplified.svg"
+              alt="Simplified Aurora node architecture"
+            >
+          </div>
+          <div>
+            <ul>
+              <li>Up to <strong>12</strong> concurrent jobs</li>
+              <li><strong>16 ranks/job</strong> across <strong>2 nodes</strong></li>
+              <li>Message size <strong>512 MiB</strong> per rank
+              <li>Track default metrics</li>
+            </ul>
+          </div>
+        </div>
         <aside class="notes">
-          Define the congestion setup used to stress the network while tracing one job for clarity.
+          Walk through the Aurora node diagram (cores, memory, NIC, where CXI counters live),
+          then connect it directly to this congestion setup used to stress the network while
+          tracing one job for clarity.
         </aside>
       </section>
 
