@@ -585,46 +585,32 @@ LTTNG_UST_CXI_COUNTERS_FILE=foo.txt</code></li>
       </section>
 
       <section>
-        <h2>Running with <code>iprof</code></h2>
-        <ul>
-          <li><code>iprof --timeline --sample -- ./a.out</code></li>
-          <li>Example: set counters file and period (<code>...COUNTERS_FILE=mycounters.txt</code>, <code>...PERIOD_MS=50</code>)</li>
-          <li>Perfetto export produced automatically in timeline mode</li>
-        </ul>
-        <pre><code class="language-bash">LTTNG_UST_CXI_SAMPLING_CXI_COUNTERS_FILE=mycounters.txt \
-LTTNG_UST_CXI_SAMPLING_CXI_PERIOD_MS=50 \
-iprof --timeline --sample -- ./a.out
-</code></pre>
-        <aside class="notes">
-          Provide a concrete invocation that matches paper examples; stress that Perfetto output is automatic.
-        </aside>
-      </section>
-
-      <section>
         <h2>Testing Without Hardware</h2>
         <ul>
           <li>“Fake device” files that <strong>increment on read</strong></li>
           <li>Point <code>...CXI_BASE</code>/<code>...CXI_RH_BASE</code> to dummy tree</li>
-          <li>Verify trace values; BATS harness</li>
-          <li>FIXME do I need this slide?</li>
+          <li>Verify trace values or setup BATS harness</li>
         </ul>
-        <div class="placeholder">
-          <strong>Placeholder:</strong> Fake sysfs tree → plugin → assertions.
-        </div>
         <aside class="notes">
           CI‑friendly design: mock counters via filesystem to validate parsing and emission logic.
         </aside>
       </section>
 
       <section>
-        <h2>Microbenchmark Setup (Overhead)</h2>
-        <ul>
-          <li>Single node FMA loop, <strong>256×10⁹</strong> operations</li>
-          <li>Compare: baseline, THAPI only, THAPI+CXI at <strong>1 kHz / 100 Hz / 10 Hz / 1 Hz</strong></li>
-          <li><strong>Default 10 Hz</strong> is practical</li>
-          <li>FIXME either two column slide or move listing to basement</li>
-        </ul>
-        <pre><code class="language-c">// fma_bench.c
+        <section>
+          <h2>Microbenchmark Setup (Overhead)</h2>
+          <ul>
+            <li>Single node FMA loop, <strong>256×10⁹</strong> operations</li>
+            <li>Compare: baseline, THAPI only, THAPI+CXI at <strong>1 kHz / 100 Hz / 10 Hz / 1 Hz</strong></li>
+            <li><strong>Default 10 Hz</strong> is practical</li>
+          </ul>
+          <aside class="notes">
+            Highlight simple CPU‑bound kernel to measure tracing/sampling overhead and trace size across rates.
+          </aside>
+        </section>
+        <section>
+          <h2>Microbenchmark Setup (Code)</h2>
+          <pre><code class="language-c">// fma_bench.c
 #include &lt;math.h&gt;
 #define MAD4(x,y,z)  x=fma(x,y,z);x=fma(x,y,z);x=fma(x,y,z);x=fma(x,y,z)
 #define MAD16(x,y,z) MAD4(x,y,z);MAD4(x,y,z);MAD4(x,y,z);MAD4(x,y,z)
@@ -635,10 +621,11 @@ int main(void){
   for(unsigned long i = 0; i &lt; N; i++) MAD64(x,y,z);
   return 0;
 }</code></pre>
-        <small class="caption">(FIXME make basement slide)Code listing from paper: FMA microbenchmark (<code>lst:fma-bench</code>).</small>
-        <aside class="notes">
-          Highlight simple CPU‑bound kernel to measure tracing/sampling overhead and trace size across rates.
-        </aside>
+          <small class="caption">(FIXME make basement slide)Code listing from paper: FMA microbenchmark (<code>lst:fma-bench</code>).</small>
+          <aside class="notes">
+            Microbenchmark code.
+          </aside>
+        </section>
       </section>
 
       <section>
