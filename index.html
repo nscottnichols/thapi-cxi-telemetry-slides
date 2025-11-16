@@ -621,7 +621,7 @@ int main(void){
   for(unsigned long i = 0; i &lt; N; i++) MAD64(x,y,z);
   return 0;
 }</code></pre>
-          <small class="caption">(FIXME make basement slide)Code listing from paper: FMA microbenchmark (<code>lst:fma-bench</code>).</small>
+          <small class="caption">Code listing from paper: FMA microbenchmark (<code>lst:fma-bench</code>).</small>
           <aside class="notes">
             Microbenchmark code.
           </aside>
@@ -629,16 +629,66 @@ int main(void){
       </section>
 
       <section>
-        <h2>Overhead &amp; Trace Size (Results)</h2>
-        <ul>
-          <li>Baseline: <strong>10.363 ± 0.025 s</strong>; THAPI only: <strong>14.123 ± 0.326 s</strong></li>
-          <li>THAPI+CXI: <strong>14.132 ± 0.041 s (1 kHz)</strong>; <strong>14.156 ± 0.335 s (100 Hz)</strong></li>
-          <li>THAPI+CXI: <strong>14.177 ± 0.348 s (10 Hz)</strong>; <strong>14.178 ± 0.320 s (1 Hz)</strong></li>
-          <li>Trace sizes: <strong>174.84 MB</strong>, <strong>34.52 MB</strong>, <strong>13.65 MB</strong>, <strong>11.53 MB</strong> respectively</li>
-        </ul>
-        <small class="caption">(FIXME Make into a table) Runtime and trace size impact for varying CXI sampling rates.</small>
+        <h2>Overhead &amp; Trace Size</h2>
+
+        <div class="sm">
+          <table>
+            <thead>
+              <tr>
+                <th>Configuration</th>
+                <th>Sampling rate</th>
+                <th>Runtime (s)</th>
+                <th>Trace size (MB)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Baseline</td>
+                <td>–</td>
+                <td><strong>10.363&nbsp;±&nbsp;0.025</strong></td>
+                <td>–</td>
+              </tr>
+              <tr>
+                <td>THAPI only</td>
+                <td>–</td>
+                <td><strong>14.123&nbsp;±&nbsp;0.326</strong></td>
+                <td>–</td>
+              </tr>
+              <tr>
+                <td>THAPI + CXI</td>
+                <td>1&nbsp;kHz</td>
+                <td><strong>14.132&nbsp;±&nbsp;0.041</strong></td>
+                <td><strong>174.84</strong></td>
+              </tr>
+              <tr>
+                <td>THAPI + CXI</td>
+                <td>100&nbsp;Hz</td>
+                <td><strong>14.156&nbsp;±&nbsp;0.335</strong></td>
+                <td><strong>34.52</strong></td>
+              </tr>
+              <tr>
+                <td>THAPI + CXI</td>
+                <td>10&nbsp;Hz</td>
+                <td><strong>14.177&nbsp;±&nbsp;0.348</strong></td>
+                <td><strong>13.65</strong></td>
+              </tr>
+              <tr>
+                <td>THAPI + CXI</td>
+                <td>1&nbsp;Hz</td>
+                <td><strong>14.178&nbsp;±&nbsp;0.320</strong></td>
+                <td><strong>11.53</strong></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <small class="caption">
+          Runtime and trace size impact for varying CXI sampling rates.
+        </small>
+
         <aside class="notes">
-          Emphasize that CXI sampling adds negligible runtime beyond THAPI, and trace size scales with sampling rate.
+          Emphasize that CXI sampling adds negligible runtime beyond THAPI,
+          and trace size scales with sampling rate.
         </aside>
       </section>
 
@@ -662,7 +712,6 @@ fi_pingpong -S &lt;size&gt; -I 100000 -e rdm -m tagged -p cxi -d &lt;interface&g
           <li>Overhead ≈ <strong>181 B/msg</strong> (both 256 B and 64 B cases)</li>
           <li>Per‑NIC tracks confirm traffic on intended rails</li>
           <li>Mapping verified; no cross‑talk between ports</li>
-          <li>FIXME should I add Perfetto timeline or table from paper "validating" above?</li>
         </ul>
         <small class="caption">Per‑port byte deltas and inferred overhead.</small>
         <aside class="notes">
